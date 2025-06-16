@@ -1,13 +1,18 @@
 # テスト関連
 test/
 coverage/
+*.test.js
 jest.config.js
 
 # 開発ツール設定
 .vscode/
 .github/
+.eslintrc.cjs
 .eslintrc.js
 prettier.config.js
+.editorconfig
+.lintstagedrc
+.husky/
 
 # 例
 examples/
@@ -16,3 +21,4 @@ examples/
 .DS_Store
 *.log
 .gitignore
+node_modules/
