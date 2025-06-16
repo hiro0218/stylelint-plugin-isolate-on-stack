@@ -4,7 +4,6 @@ export default [
   {
     ignores: ["coverage/**", "node_modules/**"],
   },
-
   {
     languageOptions: {
       ecmaVersion: 2022,
@@ -49,7 +48,6 @@ export default [
       "jest/valid-expect": "error",
     },
   },
-
   {
     files: [
       "**/test/**/*.js",
