@@ -309,4 +309,253 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
     expect(result.results[0].warnings).toHaveLength(1);
     expect(result.results[0].warnings[0].text).toContain("has no effect on pseudo-elements");
   });
+
+  it("handles different property order (z-index before position)", async () => {
+    await testRule({
+      code: `
+        .test {
+          z-index: 1;
+          position: absolute;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when z-index is before position",
+    });
+  });
+
+  it("handles case insensitive property names", async () => {
+    await testRule({
+      code: `
+        .test {
+          Position: absolute;
+          Z-INDEX: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when property names have different capitalization",
+    });
+  });
+
+  it("handles case insensitive property values", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: ABSOLUTE;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when property values have different capitalization",
+    });
+  });
+
+  it("passes when isolation: isolate is specified with different capitalization", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: 1;
+          isolation: ISOLATE;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when isolation: isolate is present with different capitalization",
+    });
+  });
+
+  it("handles isolation: isolate between other properties", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: fixed;
+          color: red;
+          isolation: isolate;
+          z-index: 1;
+          margin: 10px;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when isolation: isolate is between other properties",
+    });
+  });
+
+  it("should report error for ::first-line pseudo-element but not autofix", async () => {
+    await testRule({
+      code: `
+        .test::first-line {
+          position: absolute;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should report error for ::first-line pseudo-element but not apply autofix",
+    });
+  });
+
+  it("should report error for ::first-letter pseudo-element but not autofix", async () => {
+    await testRule({
+      code: `
+        .test::first-letter {
+          position: relative;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should report error for ::first-letter pseudo-element but not apply autofix",
+    });
+  });
+
+  it("should report error for ::marker pseudo-element but not autofix", async () => {
+    await testRule({
+      code: `
+        li::marker {
+          position: relative;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should report error for ::marker pseudo-element but not apply autofix",
+    });
+  });
+
+  it("should report warning when ::selection pseudo-element has isolation: isolate", async () => {
+    await testRule({
+      code: `
+        .test::selection {
+          position: relative;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 1,
+      description: "should report warning when ::selection pseudo-element has isolation: isolate",
+    });
+  });
+
+  it("handles complex selectors with combinators", async () => {
+    await testRule({
+      code: `
+        .parent > .child {
+          position: absolute;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when using complex selectors with combinators",
+    });
+  });
+
+  it("handles multiple selectors in the same rule", async () => {
+    await testRule({
+      code: `
+        .test1, .test2, .test3 {
+          position: fixed;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when using multiple selectors in the same rule",
+    });
+  });
+
+  it("autofixes multiple selectors in the same rule", async () => {
+    await testRule({
+      code: `
+        .test1, .test2, .test3 {
+          position: fixed;
+          z-index: 1;
+        }
+      `,
+      fixed: `
+        .test1, .test2, .test3 {
+          position: fixed;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 0,
+      description: "should autofix when using multiple selectors in the same rule",
+    });
+  });
+
+  it("handles mixed normal and pseudo-element selectors", async () => {
+    await testRule({
+      code: `
+        .test, .test::before {
+          position: sticky;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when using mixed normal and pseudo-element selectors",
+    });
+  });
+
+  it("handles multiple position declarations in the same rule", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: static;
+          color: blue;
+          position: absolute;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when having multiple position declarations with the last one being a stacking value",
+    });
+  });
+
+  it("handles multiple z-index declarations in the same rule", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: auto;
+          color: blue;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when having multiple z-index declarations",
+    });
+  });
+
+  it("autofixes correctly with multiple z-index declarations", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: auto;
+          color: blue;
+          z-index: 1;
+        }
+      `,
+      fixed: `
+        .test {
+          position: absolute;
+          z-index: auto;
+          color: blue;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 0,
+      description: "should autofix correctly with multiple z-index declarations",
+    });
+  });
+
+  it("passes when isolation already exists but with different value", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: 1;
+          isolation: auto;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when isolation exists but with a value other than isolate",
+    });
+  });
 });
