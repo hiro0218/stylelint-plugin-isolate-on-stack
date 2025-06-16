@@ -83,14 +83,26 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
 
 #### Pseudo-Elements
 
-This rule will still report errors for pseudo-elements (like `::before`, `::after`) that use positioning properties with `z-index` but lack `isolation: isolate`. However, the automatic fix will not be applied to pseudo-elements, as `isolation: isolate` has no effect on them.
+This rule handles pseudo-elements in two ways:
 
-Example of a pseudo-element that will be reported but not auto-fixed:
+1. When a pseudo-element uses positioning properties with `z-index` but lacks `isolation: isolate`, the rule will report an error but will not automatically fix it, as `isolation: isolate` has no effect on pseudo-elements.
+
+2. When a pseudo-element already includes `isolation: isolate`, the rule will report a warning indicating that this property has no effect on pseudo-elements and should be removed.
+
+Examples of pseudo-element handling:
 
 ```css
+/* Will report an error but won't be auto-fixed */
 .element::before {
   position: absolute;
   z-index: 10;
   /* isolation: isolate would be reported as missing, but not auto-fixed */
+}
+
+/* Will report a warning to remove the redundant property */
+.element::after {
+  position: fixed;
+  z-index: 5;
+  isolation: isolate; /* This will be flagged as redundant */
 }
 ```

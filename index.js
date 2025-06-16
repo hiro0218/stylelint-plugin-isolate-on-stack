@@ -5,6 +5,8 @@ const messages = stylelint.utils.ruleMessages(ruleName, {
   expected:
     "Expected 'isolation: isolate' when using 'position' with a stacking value and 'z-index'.",
   fixed: "'isolation: isolate' was automatically added.",
+  redundant:
+    "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
 });
 
 const CSS = Object.freeze({
@@ -92,7 +94,16 @@ const plugin = stylelint.createPlugin(
         }
 
         // 条件判定と修正
-        if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
+        if (isPseudoElement && hasIsolationIsolate) {
+          // 疑似要素にisolation: isolateが指定されている場合は警告を出す
+          const isolationNode = declMap.get(isolationKey).find(item => item.value === isolateValue).node;
+          stylelint.utils.report({
+            message: messages.redundant,
+            node: isolationNode, // isolationプロパティ自体を指し示す
+            result,
+            ruleName,
+          });
+        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
           if (context && context.fix && lastZIndexDecl && !isPseudoElement) {
             // 疑似要素でない場合のみ自動修正を適用
             rule.insertAfter(lastZIndexDecl, {

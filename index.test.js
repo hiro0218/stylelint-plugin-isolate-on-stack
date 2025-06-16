@@ -257,4 +257,53 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       `);
     expect(result.results[0].warnings).toHaveLength(1);
   });
+
+  it("should report warning when pseudo-element has isolation: isolate", async () => {
+    await testRule({
+      code: `
+        .test::before {
+          position: absolute;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 1,
+      description: "should report warning when pseudo-element has isolation: isolate",
+    });
+  });
+
+  it("should report warning when CSS2 style pseudo-element has isolation: isolate", async () => {
+    await testRule({
+      code: `
+        .test:after {
+          position: fixed;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 1,
+      description: "should report warning when CSS2 style pseudo-element has isolation: isolate",
+    });
+  });
+
+  it("should report correct message when pseudo-element has isolation: isolate", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .test::before {
+          position: absolute;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: true,
+        },
+      },
+    });
+
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("has no effect on pseudo-elements");
+  });
 });
