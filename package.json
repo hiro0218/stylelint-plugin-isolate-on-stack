@@ -1,6 +1,6 @@
 {
   "name": "stylelint-plugin-isolate-on-stack",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A Stylelint plugin to enforce 'isolation: isolate' when using positioning properties with 'z-index', with autofix support.",
   "keywords": [
     "stylelint",
