@@ -1,0 +1,23 @@
+# テスト関連
+test/
+coverage/
+*.test.js
+jest.config.js
+
+# 開発ツール設定
+.vscode/
+.github/
+eslint.config.js
+prettier.config.js
+.editorconfig
+.lintstagedrc
+.husky/
+
+# 例
+examples/
+
+# その他
+.DS_Store
+*.log
+.gitignore
+node_modules/

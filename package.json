@@ -1,0 +1,55 @@
+{
+  "name": "stylelint-plugin-isolate-on-stack",
+  "version": "0.1.0",
+  "description": "A Stylelint plugin to enforce 'isolation: isolate' when using 'position: absolute' with 'z-index', with autofix support.",
+  "keywords": [
+    "stylelint",
+    "stylelint-plugin",
+    "isolation",
+    "css",
+    "z-index",
+    "absolute",
+    "autofix"
+  ],
+  "homepage": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack#readme",
+  "bugs": {
+    "url": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiro0218/stylelint-plugin-isolate-on-stack.git"
+  },
+  "license": "MIT",
+  "author": "hiro0218",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "LICENSE"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "prepublishOnly": "npm run lint && npm test",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "eslint-plugin-jest": "^28.14.0",
+    "eslint-plugin-node": "^11.1.0",
+    "husky": "^9.1.7",
+    "jest": "^30.0.0",
+    "lint-staged": "^16.1.2",
+    "postcss": "^8.5.5",
+    "prettier": "^3.5.3",
+    "stylelint": "^16.20.0"
+  },
+  "peerDependencies": {
+    "stylelint": ">=16.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "plugins": ["../index.js"],
+  "rules": {
+    "isolate-on-stack/isolation-for-absolute-zindex": true
+  }
+}
