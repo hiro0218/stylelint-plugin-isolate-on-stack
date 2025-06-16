@@ -1,0 +1,18 @@
+# テスト関連
+test/
+coverage/
+jest.config.js
+
+# 開発ツール設定
+.vscode/
+.github/
+.eslintrc.js
+prettier.config.js
+
+# 例
+examples/
+
+# その他
+.DS_Store
+*.log
+.gitignore
