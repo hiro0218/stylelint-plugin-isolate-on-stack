@@ -36,8 +36,12 @@ const plugin = stylelint.createPlugin(
           return;
         }
 
-        // 疑似要素かどうかを判定
-        const isPseudoElement = rule.selector.match(pseudoElementPattern);
+        // セレクタがカンマで区切られている場合は分割して処理
+        const selectors = rule.selector.split(',').map(s => s.trim());
+        // すべてのセレクタが疑似要素である場合はtrueになる
+        const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(pseudoElementPattern));
+        // 少なくとも1つの通常のセレクタがある場合はtrueになる（疑似要素でないセレクタ）
+        const hasNormalSelectors = selectors.some(selector => !selector.match(pseudoElementPattern));
 
         let hasPositionStacking = false;
         let hasZIndex = false;
@@ -93,8 +97,8 @@ const plugin = stylelint.createPlugin(
         }
 
         // 条件判定と修正
-        if (isPseudoElement && hasIsolationIsolate) {
-          // 疑似要素にisolation: isolateが指定されている場合は警告を出す
+        if (isAllPseudoElements && hasIsolationIsolate) {
+          // すべてのセレクタが疑似要素であり、isolation: isolateが指定されている場合は警告を出す
           const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
           // findの結果が存在することを確認してからnodeプロパティにアクセス
           if (isolationItem) {
@@ -105,14 +109,15 @@ const plugin = stylelint.createPlugin(
               ruleName,
             });
           }
-        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
-          if (context && context.fix && lastZIndexDecl && !isPseudoElement) {
+        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && hasNormalSelectors) {
+          if (context && context.fix && lastZIndexDecl && !isAllPseudoElements) {
             // 疑似要素でない場合のみ自動修正を適用
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,
               value: isolateValue,
             });
-          } else {
+          } else if (hasNormalSelectors) {
+            // 通常のセレクタが少なくとも1つ含まれる場合のみエラーメッセージを表示
             stylelint.utils.report({
               message: messages.expected,
               node: lastZIndexDecl || rule, // z-index宣言がある場合はその位置にエラーを表示、なければルール全体
