@@ -113,7 +113,7 @@ const plugin = stylelint.createPlugin(
           } else {
             stylelint.utils.report({
               message: messages.expected,
-              node: rule,
+              node: lastZIndexDecl || rule, // z-index宣言がある場合はその位置にエラーを表示、なければルール全体
               result,
               ruleName,
             });
