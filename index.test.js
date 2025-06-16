@@ -5,10 +5,10 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const { ruleName, messages } = plugin;
+const { ruleName } = plugin;
 
 const testRule = async (options) => {
-    const { code, fixed, description, warnings } = options;
+    const { code, fixed, warnings } = options;
 
     const result = await stylelint.lint({
         code,
@@ -22,7 +22,7 @@ const testRule = async (options) => {
     });
 
     if (fixed) {
-        expect(result.output).toEqual(fixed);
+        expect(result.code).toEqual(fixed);
     }
 
     if (warnings) {
