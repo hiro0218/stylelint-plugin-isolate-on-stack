@@ -1,26 +1,31 @@
 import stylelint from "stylelint";
 
-const ruleName = "isolate-on-stack/isolation-for-absolute-zindex";
+const ruleName = "isolate-on-stack/isolation-for-position-zindex";
 const messages = stylelint.utils.ruleMessages(ruleName, {
   expected:
-    "Expected 'isolation: isolate' when using 'position: absolute' and 'z-index'.",
+    "Expected 'isolation: isolate' when using 'position' with a stacking value and 'z-index'.",
   fixed: "'isolation: isolate' was automatically added.",
+  redundant:
+    "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
 });
 
 const CSS = Object.freeze({
   POSITION_KEY: "position",
-  POSITION_VALUE_ABSOLUTE: "absolute",
+  POSITION_STACKING_VALUES: ["absolute", "relative", "fixed", "sticky"],
   Z_INDEX_KEY: "z-index",
   ISOLATION_KEY: "isolation",
   ISOLATION_VALUE_ISOLATE: "isolate",
 });
+
+// 疑似要素のパターン
+const pseudoElementPattern = /(::|:)(before|after|first-line|first-letter|marker|placeholder|selection|backdrop|cue|part|slotted)/;
 
 const plugin = stylelint.createPlugin(
   ruleName,
   function (primaryOption, secondaryOptions, context) {
     return function (root, result) {
       const positionKey = CSS.POSITION_KEY;
-      const absoluteValue = CSS.POSITION_VALUE_ABSOLUTE;
+      const stackingValues = CSS.POSITION_STACKING_VALUES;
       const zIndexKey = CSS.Z_INDEX_KEY;
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
@@ -31,7 +36,10 @@ const plugin = stylelint.createPlugin(
           return;
         }
 
-        let hasPositionAbsolute = false;
+        // 疑似要素かどうかを判定
+        const isPseudoElement = rule.selector.match(pseudoElementPattern);
+
+        let hasPositionStacking = false;
         let hasZIndex = false;
         let hasIsolationIsolate = false;
         let lastZIndexDecl = null;
@@ -61,8 +69,8 @@ const plugin = stylelint.createPlugin(
         // 各プロパティの検証
         if (declMap.has(positionKey)) {
           for (const item of declMap.get(positionKey)) {
-            if (item.value === absoluteValue) {
-              hasPositionAbsolute = true;
+            if (stackingValues.includes(item.value)) {
+              hasPositionStacking = true;
               break;
             }
           }
@@ -85,8 +93,21 @@ const plugin = stylelint.createPlugin(
         }
 
         // 条件判定と修正
-        if (hasPositionAbsolute && hasZIndex && !hasIsolationIsolate) {
-          if (context && context.fix && lastZIndexDecl) {
+        if (isPseudoElement && hasIsolationIsolate) {
+          // 疑似要素にisolation: isolateが指定されている場合は警告を出す
+          const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
+          // findの結果が存在することを確認してからnodeプロパティにアクセス
+          if (isolationItem) {
+            stylelint.utils.report({
+              message: messages.redundant,
+              node: isolationItem.node, // isolationプロパティ自体を指し示す
+              result,
+              ruleName,
+            });
+          }
+        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
+          if (context && context.fix && lastZIndexDecl && !isPseudoElement) {
+            // 疑似要素でない場合のみ自動修正を適用
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,
               value: isolateValue,
@@ -94,7 +115,7 @@ const plugin = stylelint.createPlugin(
           } else {
             stylelint.utils.report({
               message: messages.expected,
-              node: rule,
+              node: lastZIndexDecl || rule, // z-index宣言がある場合はその位置にエラーを表示、なければルール全体
               result,
               ruleName,
             });
