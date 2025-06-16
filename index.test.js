@@ -202,4 +202,59 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       description: "should autofix by adding isolation: isolate for position: fixed",
     });
   });
+
+  it("should report error for pseudo-element but not autofix", async () => {
+    await testRule({
+      code: `
+        .test::before {
+          position: absolute;
+          z-index: 1;
+        }
+      `,
+      // fixedは指定しない - 疑似要素には自動修正を適用しないため
+      warnings: 1,
+      description: "should report error for pseudo-element but not apply autofix",
+    });
+  });
+
+  it("should report error for single colon pseudo-element but not autofix", async () => {
+    await testRule({
+      code: `
+        .test:before {
+          position: fixed;
+          z-index: 1;
+        }
+      `,
+      // fixedは指定しない - 疑似要素には自動修正を適用しないため
+      warnings: 1,
+      description: "should report error for single colon pseudo-element but not apply autofix",
+    });
+  });
+
+  it("should explicitly not autofix pseudo-elements when fix is enabled", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .test::after {
+          position: relative;
+          z-index: 1;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: true,
+        },
+      },
+      fix: true, // 明示的にfixをtrueに設定
+    });
+
+    // 修正が適用されていないことを確認
+    expect(result.code).toEqual(`
+        .test::after {
+          position: relative;
+          z-index: 1;
+        }
+      `);
+    expect(result.results[0].warnings).toHaveLength(1);
+  });
 });

@@ -80,3 +80,17 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
   z-index: 10;
 }
 ```
+
+#### Pseudo-Elements
+
+This rule will still report errors for pseudo-elements (like `::before`, `::after`) that use positioning properties with `z-index` but lack `isolation: isolate`. However, the automatic fix will not be applied to pseudo-elements, as `isolation: isolate` has no effect on them.
+
+Example of a pseudo-element that will be reported but not auto-fixed:
+
+```css
+.element::before {
+  position: absolute;
+  z-index: 10;
+  /* isolation: isolate would be reported as missing, but not auto-fixed */
+}
+```

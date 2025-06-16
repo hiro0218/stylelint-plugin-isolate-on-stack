@@ -25,11 +25,18 @@ const plugin = stylelint.createPlugin(
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
 
+      // 疑似要素のパターン（::before, ::after など）
+      // CSS2では:beforeのような単一コロンも有効なので両方対応
+      const pseudoElementPattern = /(::|:)(before|after|first-line|first-letter|marker|placeholder|selection|backdrop|cue|part|slotted)/;
+
       root.walkRules((rule) => {
         // 宣言が不足している場合はスキップ
         if (!rule.nodes || rule.nodes.length < 2) {
           return;
         }
+
+        // 疑似要素かどうかを判定
+        const isPseudoElement = rule.selector.match(pseudoElementPattern);
 
         let hasPositionStacking = false;
         let hasZIndex = false;
@@ -86,7 +93,8 @@ const plugin = stylelint.createPlugin(
 
         // 条件判定と修正
         if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
-          if (context && context.fix && lastZIndexDecl) {
+          if (context && context.fix && lastZIndexDecl && !isPseudoElement) {
+            // 疑似要素でない場合のみ自動修正を適用
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,
               value: isolateValue,
