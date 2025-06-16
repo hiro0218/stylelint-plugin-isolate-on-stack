@@ -99,6 +99,11 @@ When a rule contains both normal selectors and pseudo-element selectors, the plu
 }
 ```
 
+The plugin distinguishes between rules containing:
+
+1. Only pseudo-elements - No warning about missing `isolation: isolate`, warns if it's present as redundant
+2. At least one normal element - Warning about missing `isolation: isolate` when position and z-index are present
+
 #### Multiple z-index Declarations
 
 When a rule contains multiple `z-index` declarations (except `z-index: auto`), the plugin will report errors for each non-auto declaration:

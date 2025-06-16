@@ -40,8 +40,6 @@ const plugin = stylelint.createPlugin(
         const selectors = rule.selector.split(',').map(s => s.trim());
         // すべてのセレクタが疑似要素である場合はtrueになる
         const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(pseudoElementPattern));
-        // 少なくとも1つの通常のセレクタがある場合はtrueになる（疑似要素でないセレクタ）
-        const hasNormalSelectors = selectors.some(selector => !selector.match(pseudoElementPattern));
 
         let hasPositionStacking = false;
         let hasZIndex = false;
@@ -84,7 +82,6 @@ const plugin = stylelint.createPlugin(
         if (declMap.has(zIndexKey)) {
           // z-index: auto 以外の宣言を収集
           const zItems = declMap.get(zIndexKey);
-          const nonAutoZIndexItems = [];
 
           for (const item of zItems) {
             if (item.value !== "auto") {
@@ -118,15 +115,16 @@ const plugin = stylelint.createPlugin(
               ruleName,
             });
           }
-        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && hasNormalSelectors) {
-          if (context && context.fix && lastZIndexDecl && !isAllPseudoElements) {
-            // 疑似要素でない場合のみ自動修正を適用
+        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) {
+          // 疑似要素のみの場合（isAllPseudoElements=true）は何も警告を出さない
+          if (context && context.fix && lastZIndexDecl) {
+            // 自動修正を適用
             // 最後のz-index宣言の後ろにisolation: isolateを挿入
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,
               value: isolateValue,
             });
-          } else if (hasNormalSelectors) {
+          } else {
             // 通常のセレクタが少なくとも1つ含まれる場合のみエラーメッセージを表示
             // すべてのz-index: auto以外の宣言に対して警告を表示
             if (nonAutoZIndexItems && nonAutoZIndexItems.length > 0) {
