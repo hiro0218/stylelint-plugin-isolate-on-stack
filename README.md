@@ -32,7 +32,7 @@ Add the following to your `.stylelintrc.json` file (or other Stylelint configura
 
 ### Rule Details
 
-This plugin reports an error when a positioning property and `z-index` exist but `isolation: isolate` is not specified.
+This plugin reports an error when a positioning property and `z-index` (except `z-index: auto`) exist but `isolation: isolate` is not specified.
 
 #### Autofix
 
@@ -45,6 +45,12 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
   position: absolute;
   z-index: 10;
   isolation: isolate;
+}
+
+/* No warning, z-index: auto doesn't create a new stacking context */
+.element {
+  position: relative;
+  z-index: auto;
 }
 ```
 
@@ -59,14 +65,14 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
 
 #### Pseudo-Elements
 
-This rule handles pseudo-elements in two ways:
+This rule handles pseudo-elements specially:
 
-1. When a pseudo-element uses positioning properties with `z-index` but lacks `isolation: isolate`, the rule will report an error but will not automatically fix it, as `isolation: isolate` has no effect on pseudo-elements.
+1. When a pseudo-element uses positioning properties with `z-index`, the rule will not report any errors, as `isolation: isolate` has no effect on pseudo-elements and would be redundant.
 
 2. When a pseudo-element already includes `isolation: isolate`, the rule will report a warning indicating that this property has no effect on pseudo-elements and should be removed.
 
 ```css
-/* Will report an error but won't be auto-fixed */
+/* No error will be reported */
 .element::before {
   position: absolute;
   z-index: 10;
@@ -77,5 +83,18 @@ This rule handles pseudo-elements in two ways:
   position: fixed;
   z-index: 5;
   isolation: isolate;
+}
+```
+
+#### Mixed Selectors
+
+When a rule contains both normal selectors and pseudo-element selectors, the plugin will still report errors for the normal selectors:
+
+```css
+/* Will report an error for the normal selector */
+.element,
+.element::before {
+  position: absolute;
+  z-index: 10;
 }
 ```

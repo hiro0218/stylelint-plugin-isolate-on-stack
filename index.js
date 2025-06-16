@@ -81,10 +81,16 @@ const plugin = stylelint.createPlugin(
         }
 
         if (declMap.has(zIndexKey)) {
-          hasZIndex = true;
-          // autofix用の参照を保存
+          // z-index: auto 以外の場合のみhasZIndexをtrueに設定
           const zItems = declMap.get(zIndexKey);
-          lastZIndexDecl = zItems[zItems.length - 1].node;
+          for (const item of zItems) {
+            if (item.value !== "auto") {
+              hasZIndex = true;
+              // autofix用の参照を保存
+              lastZIndexDecl = item.node;
+              break;
+            }
+          }
         }
 
         if (declMap.has(isolationKey)) {

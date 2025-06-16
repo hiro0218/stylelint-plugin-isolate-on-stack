@@ -569,4 +569,44 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       description: "should flag when isolation exists but with a value other than isolate",
     });
   });
+
+  it("passes when z-index is auto", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: auto;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when z-index is auto",
+    });
+  });
+
+  it("passes when z-index is AUTO (case insensitive)", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: AUTO;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when z-index is AUTO (case insensitive)",
+    });
+  });
+
+  it("flags when multiple z-index values with one non-auto", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: auto;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when there are multiple z-index values with at least one non-auto",
+    });
+  });
 });
