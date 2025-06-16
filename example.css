@@ -1,0 +1,82 @@
+/* 誤った例 - エラーが発生する */
+.example-error {
+  position: absolute;
+  z-index: 10;
+}
+
+/* 正しい例 - エラーは発生しない */
+.example-correct {
+  position: absolute;
+  z-index: 10;
+  isolation: isolate;
+}
+
+/* z-indexのみの場合 - エラーは発生しない */
+.example-z-index-only {
+  z-index: 10;
+}
+
+/* position: absoluteのみの場合 - エラーは発生しない */
+.example-absolute-only {
+  position: absolute;
+}
+
+/* position: relativeとz-indexの誤った例 - エラーが発生する */
+.example-relative-error {
+  position: relative;
+  z-index: 5;
+}
+
+/* position: fixedとz-indexの誤った例 - エラーが発生する */
+.example-fixed-error {
+  position: fixed;
+  z-index: 100;
+}
+
+/* position: stickyとz-indexの誤った例 - エラーが発生する */
+.example-sticky-error {
+  position: sticky;
+  z-index: 50;
+}
+
+/* z-index: autoの場合 - エラーは発生しない */
+.example-z-index-auto {
+  position: absolute;
+  z-index: auto;
+}
+
+/* 疑似要素の場合 - エラーは発生しない */
+.element::before {
+  position: absolute;
+  z-index: 20;
+}
+
+/* 疑似要素にisolation: isolateがある場合 - 冗長性に関する警告が発生する */
+.element::after {
+  position: fixed;
+  z-index: 15;
+  isolation: isolate;
+}
+
+/* 通常のセレクタと疑似要素が混在する場合 - 通常のセレクタについてエラーが発生する */
+.mixed-selector,
+.mixed-selector::before {
+  position: absolute;
+  z-index: 30;
+}
+
+/* 複数のz-index宣言がある場合 - 各non-auto宣言についてエラーが発生する */
+.multiple-z-index {
+  position: relative;
+  z-index: 1;
+  color: red;
+  z-index: 2;
+}
+
+/* z-index: autoとz-index: 5が混在する場合 - z-index: 5についてのみエラーが発生する */
+.mixed-z-index {
+  position: relative;
+  z-index: auto;
+  margin: 10px;
+  z-index: 5;
+}

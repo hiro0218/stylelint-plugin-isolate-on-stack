@@ -34,6 +34,7 @@
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint .",
+    "lint:css": "stylelint example.css",
     "prepare": "husky",
     "prepublishOnly": "npm run lint && npm test",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",

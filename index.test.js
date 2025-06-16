@@ -206,7 +206,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
     });
   });
 
-  it("should report error for pseudo-element but not autofix", async () => {
+  it("should not report error for pseudo-element with position and z-index", async () => {
     await testRule({
       code: `
         .test::before {
@@ -214,13 +214,12 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `,
-      // fixedは指定しない - 疑似要素には自動修正を適用しないため
-      warnings: 1,
-      description: "should report error for pseudo-element but not apply autofix",
+      warnings: 0,
+      description: "should not report error for pseudo-element with position and z-index",
     });
   });
 
-  it("should report error for single colon pseudo-element but not autofix", async () => {
+  it("should not report error for single colon pseudo-element with position and z-index", async () => {
     await testRule({
       code: `
         .test:before {
@@ -228,13 +227,12 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `,
-      // fixedは指定しない - 疑似要素には自動修正を適用しないため
-      warnings: 1,
-      description: "should report error for single colon pseudo-element but not apply autofix",
+      warnings: 0,
+      description: "should not report error for single colon pseudo-element with position and z-index",
     });
   });
 
-  it("should explicitly not autofix pseudo-elements when fix is enabled", async () => {
+  it("should not apply fix to pseudo-elements even when fix is enabled", async () => {
     const result = await stylelint.lint({
       code: `
         .test::after {
@@ -258,7 +256,8 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `);
-    expect(result.results[0].warnings).toHaveLength(1);
+    // 疑似要素にはエラーを報告しないため、警告は0になるはず
+    expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should report warning when pseudo-element has isolation: isolate", async () => {
@@ -379,7 +378,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
     });
   });
 
-  it("should report error for ::first-line pseudo-element but not autofix", async () => {
+  it("should not report error for ::first-line pseudo-element", async () => {
     await testRule({
       code: `
         .test::first-line {
@@ -387,12 +386,12 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `,
-      warnings: 1,
-      description: "should report error for ::first-line pseudo-element but not apply autofix",
+      warnings: 0,
+      description: "should not report error for ::first-line pseudo-element",
     });
   });
 
-  it("should report error for ::first-letter pseudo-element but not autofix", async () => {
+  it("should not report error for ::first-letter pseudo-element", async () => {
     await testRule({
       code: `
         .test::first-letter {
@@ -400,12 +399,12 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `,
-      warnings: 1,
-      description: "should report error for ::first-letter pseudo-element but not apply autofix",
+      warnings: 0,
+      description: "should not report error for ::first-letter pseudo-element",
     });
   });
 
-  it("should report error for ::marker pseudo-element but not autofix", async () => {
+  it("should not report error for ::marker pseudo-element", async () => {
     await testRule({
       code: `
         li::marker {
@@ -413,8 +412,8 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: 1;
         }
       `,
-      warnings: 1,
-      description: "should report error for ::marker pseudo-element but not apply autofix",
+      warnings: 0,
+      description: "should not report error for ::marker pseudo-element",
     });
   });
 
@@ -487,7 +486,19 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `,
       warnings: 1,
-      description: "should flag when using mixed normal and pseudo-element selectors",
+      description: "should flag only for normal selectors when mixed with pseudo-element selectors",
+    });
+
+    // 追加テスト：通常のセレクタが複数あり、疑似要素セレクタがある場合
+    await testRule({
+      code: `
+        .test1, .test2, .test3::before {
+          position: absolute;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag once for rule with multiple normal selectors and pseudo-element selectors",
     });
   });
 
@@ -556,6 +567,46 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       `,
       warnings: 1,
       description: "should flag when isolation exists but with a value other than isolate",
+    });
+  });
+
+  it("passes when z-index is auto", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: auto;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when z-index is auto",
+    });
+  });
+
+  it("passes when z-index is AUTO (case insensitive)", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: absolute;
+          z-index: AUTO;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when z-index is AUTO (case insensitive)",
+    });
+  });
+
+  it("flags when multiple z-index values with one non-auto", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: auto;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description: "should flag when there are multiple z-index values with at least one non-auto",
     });
   });
 });
