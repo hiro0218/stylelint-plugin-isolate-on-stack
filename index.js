@@ -96,13 +96,16 @@ const plugin = stylelint.createPlugin(
         // 条件判定と修正
         if (isPseudoElement && hasIsolationIsolate) {
           // 疑似要素にisolation: isolateが指定されている場合は警告を出す
-          const isolationNode = declMap.get(isolationKey).find(item => item.value === isolateValue).node;
-          stylelint.utils.report({
-            message: messages.redundant,
-            node: isolationNode, // isolationプロパティ自体を指し示す
-            result,
-            ruleName,
-          });
+          const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
+          // findの結果が存在することを確認してからnodeプロパティにアクセス
+          if (isolationItem) {
+            stylelint.utils.report({
+              message: messages.redundant,
+              node: isolationItem.node, // isolationプロパティ自体を指し示す
+              result,
+              ruleName,
+            });
+          }
         } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
           if (context && context.fix && lastZIndexDecl && !isPseudoElement) {
             // 疑似要素でない場合のみ自動修正を適用
