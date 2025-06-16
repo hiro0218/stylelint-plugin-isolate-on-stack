@@ -2,7 +2,6 @@
   "name": "stylelint-plugin-isolate-on-stack",
   "version": "0.1.0",
   "description": "A Stylelint plugin to enforce 'isolation: isolate' when using 'position: absolute' with 'z-index', with autofix support.",
-  "main": "index.js",
   "keywords": [
     "stylelint",
     "stylelint-plugin",
@@ -12,26 +11,29 @@
     "absolute",
     "autofix"
   ],
+  "homepage": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack#readme",
+  "bugs": {
+    "url": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiro0218/stylelint-plugin-isolate-on-stack.git"
+  },
+  "license": "MIT",
+  "author": "hiro0218",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "LICENSE"
+  ],
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint .",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "prepare": "husky",
-    "release": "npm run lint && npm test && npm version",
-    "release:patch": "npm run release patch",
-    "release:minor": "npm run release minor",
-    "release:major": "npm run release major",
-    "prepublishOnly": "npm run lint && npm test"
-  },
-  "type": "module",
-  "author": "hiro0218",
-  "license": "MIT",
-  "engines": {
-    "node": ">=20"
-  },
-  "peerDependencies": {
-    "stylelint": ">=16.0.0"
+    "prepublishOnly": "npm run lint && npm test",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
     "eslint": "^9.29.0",
@@ -44,16 +46,10 @@
     "prettier": "^3.5.3",
     "stylelint": "^16.20.0"
   },
-  "files": [
-    "index.js",
-    "LICENSE"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hiro0218/stylelint-plugin-isolate-on-stack.git"
+  "peerDependencies": {
+    "stylelint": ">=16.0.0"
   },
-  "bugs": {
-    "url": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/issues"
-  },
-  "homepage": "https://github.com/hiro0218/stylelint-plugin-isolate-on-stack#readme"
+  "engines": {
+    "node": ">=20"
+  }
 }
