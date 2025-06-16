@@ -7,8 +7,7 @@ jest.config.js
 # 開発ツール設定
 .vscode/
 .github/
-.eslintrc.cjs
-.eslintrc.js
+eslint.config.js
 prettier.config.js
 .editorconfig
 .lintstagedrc
