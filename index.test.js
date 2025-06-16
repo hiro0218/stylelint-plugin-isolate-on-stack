@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const { ruleName } = plugin;
 
 const testRule = async (options) => {
-  const { code, fixed, warnings } = options;
+  const { code, fixed, warnings, description } = options;
 
   const result = await stylelint.lint({
     code,
@@ -22,13 +22,16 @@ const testRule = async (options) => {
   });
 
   if (fixed) {
-    expect(result.output).toEqual(fixed);
+    expect(result.output).toEqual(fixed,
+      description ? `Failed fix assertion: ${description}` : undefined);
   }
 
   if (warnings) {
-    expect(result.results[0].warnings).toHaveLength(warnings);
+    expect(result.results[0].warnings).toHaveLength(warnings,
+      description ? `Expected ${warnings} warnings: ${description}` : undefined);
   } else {
-    expect(result.results[0].warnings).toHaveLength(0);
+    expect(result.results[0].warnings).toHaveLength(0,
+      description ? `Expected no warnings: ${description}` : undefined);
   }
 };
 
