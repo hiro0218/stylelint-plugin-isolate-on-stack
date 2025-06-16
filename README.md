@@ -32,41 +32,17 @@ Add the following to your `.stylelintrc.json` file (or other Stylelint configura
 
 ### Rule Details
 
-This plugin reports an error in the following cases:
-
-- When a positioning property (`position: absolute`, `position: relative`, `position: fixed`, `position: sticky`) and `z-index` exist but `isolation: isolate` is not specified
+This plugin reports an error when a positioning property and `z-index` exist but `isolation: isolate` is not specified.
 
 #### Autofix
 
 This rule supports automatic fixing. When running the `stylelint --fix` command, it will automatically add `isolation: isolate` immediately after `z-index`.
 
-#### ✅ Correct Examples
+#### ✅ Correct Example
 
 ```css
-/* With position: absolute */
-.element1 {
+.element {
   position: absolute;
-  z-index: 10;
-  isolation: isolate;
-}
-
-/* With position: relative */
-.element2 {
-  position: relative;
-  z-index: 10;
-  isolation: isolate;
-}
-
-/* With position: fixed */
-.element3 {
-  position: fixed;
-  z-index: 10;
-  isolation: isolate;
-}
-
-/* With position: sticky */
-.element4 {
-  position: sticky;
   z-index: 10;
   isolation: isolate;
 }
@@ -89,20 +65,17 @@ This rule handles pseudo-elements in two ways:
 
 2. When a pseudo-element already includes `isolation: isolate`, the rule will report a warning indicating that this property has no effect on pseudo-elements and should be removed.
 
-Examples of pseudo-element handling:
-
 ```css
 /* Will report an error but won't be auto-fixed */
 .element::before {
   position: absolute;
   z-index: 10;
-  /* isolation: isolate would be reported as missing, but not auto-fixed */
 }
 
 /* Will report a warning to remove the redundant property */
 .element::after {
   position: fixed;
   z-index: 5;
-  isolation: isolate; /* This will be flagged as redundant */
+  isolation: isolate;
 }
 ```
