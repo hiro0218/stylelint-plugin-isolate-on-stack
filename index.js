@@ -1,15 +1,15 @@
 import stylelint from "stylelint";
 
-const ruleName = "isolate-on-stack/isolation-for-absolute-zindex";
+const ruleName = "isolate-on-stack/isolation-for-position-zindex";
 const messages = stylelint.utils.ruleMessages(ruleName, {
   expected:
-    "Expected 'isolation: isolate' when using 'position: absolute' and 'z-index'.",
+    "Expected 'isolation: isolate' when using 'position' with a stacking value and 'z-index'.",
   fixed: "'isolation: isolate' was automatically added.",
 });
 
 const CSS = Object.freeze({
   POSITION_KEY: "position",
-  POSITION_VALUE_ABSOLUTE: "absolute",
+  POSITION_STACKING_VALUES: ["absolute", "relative", "fixed", "sticky"],
   Z_INDEX_KEY: "z-index",
   ISOLATION_KEY: "isolation",
   ISOLATION_VALUE_ISOLATE: "isolate",
@@ -20,7 +20,7 @@ const plugin = stylelint.createPlugin(
   function (primaryOption, secondaryOptions, context) {
     return function (root, result) {
       const positionKey = CSS.POSITION_KEY;
-      const absoluteValue = CSS.POSITION_VALUE_ABSOLUTE;
+      const stackingValues = CSS.POSITION_STACKING_VALUES;
       const zIndexKey = CSS.Z_INDEX_KEY;
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
@@ -31,7 +31,7 @@ const plugin = stylelint.createPlugin(
           return;
         }
 
-        let hasPositionAbsolute = false;
+        let hasPositionStacking = false;
         let hasZIndex = false;
         let hasIsolationIsolate = false;
         let lastZIndexDecl = null;
@@ -61,8 +61,8 @@ const plugin = stylelint.createPlugin(
         // 各プロパティの検証
         if (declMap.has(positionKey)) {
           for (const item of declMap.get(positionKey)) {
-            if (item.value === absoluteValue) {
-              hasPositionAbsolute = true;
+            if (stackingValues.includes(item.value)) {
+              hasPositionStacking = true;
               break;
             }
           }
@@ -85,7 +85,7 @@ const plugin = stylelint.createPlugin(
         }
 
         // 条件判定と修正
-        if (hasPositionAbsolute && hasZIndex && !hasIsolationIsolate) {
+        if (hasPositionStacking && hasZIndex && !hasIsolationIsolate) {
           if (context && context.fix && lastZIndexDecl) {
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,

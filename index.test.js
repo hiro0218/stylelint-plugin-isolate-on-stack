@@ -32,7 +32,7 @@ const testRule = async (options) => {
   }
 };
 
-describe("isolate-on-stack/isolation-for-absolute-zindex rule", () => {
+describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
   it("flags position: absolute with z-index but no isolation", async () => {
     await testRule({
       code: `
@@ -122,8 +122,84 @@ describe("isolate-on-stack/isolation-for-absolute-zindex rule", () => {
           z-index: 3;
         }
       `,
+      warnings: 2,
+      description: "should flag both position: absolute and position: relative with z-index",
+    });
+  });
+
+  it("flags position: relative with z-index but no isolation", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: 1;
+        }
+      `,
       warnings: 1,
-      description: "should only flag the first rule",
+      description:
+        "should flag when position: relative and z-index are used without isolation: isolate",
+    });
+  });
+
+  it("flags position: fixed with z-index but no isolation", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: fixed;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description:
+        "should flag when position: fixed and z-index are used without isolation: isolate",
+    });
+  });
+
+  it("flags position: sticky with z-index but no isolation", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: sticky;
+          z-index: 1;
+        }
+      `,
+      warnings: 1,
+      description:
+        "should flag when position: sticky and z-index are used without isolation: isolate",
+    });
+  });
+
+  it("passes when position: relative with z-index has isolation: isolate", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: relative;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when isolation: isolate is present with position: relative",
+    });
+  });
+
+  it("autofixes by adding isolation: isolate for position: fixed", async () => {
+    await testRule({
+      code: `
+        .test {
+          position: fixed;
+          z-index: 1;
+        }
+      `,
+      fixed: `
+        .test {
+          position: fixed;
+          z-index: 1;
+          isolation: isolate;
+        }
+      `,
+      warnings: 0,
+      description: "should autofix by adding isolation: isolate for position: fixed",
     });
   });
 });
