@@ -22,7 +22,7 @@ const testRule = async (options) => {
   });
 
   if (fixed) {
-    expect(result.code).toEqual(fixed);
+    expect(result.output).toEqual(fixed);
   }
 
   if (warnings) {
