@@ -17,6 +17,9 @@ const CSS = Object.freeze({
   ISOLATION_VALUE_ISOLATE: "isolate",
 });
 
+// 疑似要素のパターン
+const pseudoElementPattern = /(::|:)(before|after|first-line|first-letter|marker|placeholder|selection|backdrop|cue|part|slotted)/;
+
 const plugin = stylelint.createPlugin(
   ruleName,
   function (primaryOption, secondaryOptions, context) {
@@ -26,10 +29,6 @@ const plugin = stylelint.createPlugin(
       const zIndexKey = CSS.Z_INDEX_KEY;
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
-
-      // 疑似要素のパターン（::before, ::after など）
-      // CSS2では:beforeのような単一コロンも有効なので両方対応
-      const pseudoElementPattern = /(::|:)(before|after|first-line|first-letter|marker|placeholder|selection|backdrop|cue|part|slotted)/;
 
       root.walkRules((rule) => {
         // 宣言が不足している場合はスキップ
