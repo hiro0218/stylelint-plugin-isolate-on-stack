@@ -32,11 +32,11 @@ Add the following to your `.stylelintrc.json` file (or other Stylelint configura
 
 ### Rule Details
 
-This plugin reports an error when a positioning property and `z-index` (except `z-index: auto`) exist but `isolation: isolate` is not specified.
+This plugin reports an error when a positioning property and `z-index` (except `z-index: auto`) exist but `isolation: isolate` is not specified. The error will be attached directly to each `z-index` declaration node, making it clear which declarations need to be addressed.
 
 #### Autofix
 
-This rule supports automatic fixing. When running the `stylelint --fix` command, it will automatically add `isolation: isolate` immediately after `z-index`.
+This rule supports automatic fixing. When running the `stylelint --fix` command, it will automatically add `isolation: isolate` immediately after the last non-auto `z-index` declaration in the rule.
 
 #### ✅ Correct Example
 
@@ -98,3 +98,27 @@ When a rule contains both normal selectors and pseudo-element selectors, the plu
   z-index: 10;
 }
 ```
+
+#### Multiple z-index Declarations
+
+When a rule contains multiple `z-index` declarations (except `z-index: auto`), the plugin will report errors for each non-auto declaration:
+
+```css
+/* Will report errors for both z-index declarations */
+.element {
+  position: absolute;
+  z-index: 1;
+  color: red;
+  z-index: 2;
+}
+
+/* Will report an error only for z-index: 5, but not for z-index: auto */
+.element {
+  position: relative;
+  z-index: auto;
+  margin: 10px;
+  z-index: 5;
+}
+```
+
+When using the autofix feature, the plugin will add `isolation: isolate` after the last `z-index` declaration in the rule.

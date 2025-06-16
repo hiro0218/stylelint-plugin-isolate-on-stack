@@ -47,6 +47,7 @@ const plugin = stylelint.createPlugin(
         let hasZIndex = false;
         let hasIsolationIsolate = false;
         let lastZIndexDecl = null;
+        let nonAutoZIndexItems = [];
 
         // 宣言を収集
         const declMap = new Map();
@@ -81,14 +82,16 @@ const plugin = stylelint.createPlugin(
         }
 
         if (declMap.has(zIndexKey)) {
-          // z-index: auto 以外の場合のみhasZIndexをtrueに設定
+          // z-index: auto 以外の宣言を収集
           const zItems = declMap.get(zIndexKey);
+          const nonAutoZIndexItems = [];
+
           for (const item of zItems) {
             if (item.value !== "auto") {
               hasZIndex = true;
-              // autofix用の参照を保存
+              nonAutoZIndexItems.push(item);
+              // 最後のz-index宣言をautofix用に保存（複数ある場合は最後のものを使用）
               lastZIndexDecl = item.node;
-              break;
             }
           }
         }
@@ -118,18 +121,32 @@ const plugin = stylelint.createPlugin(
         } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && hasNormalSelectors) {
           if (context && context.fix && lastZIndexDecl && !isAllPseudoElements) {
             // 疑似要素でない場合のみ自動修正を適用
+            // 最後のz-index宣言の後ろにisolation: isolateを挿入
             rule.insertAfter(lastZIndexDecl, {
               prop: isolationKey,
               value: isolateValue,
             });
           } else if (hasNormalSelectors) {
             // 通常のセレクタが少なくとも1つ含まれる場合のみエラーメッセージを表示
-            stylelint.utils.report({
-              message: messages.expected,
-              node: lastZIndexDecl || rule, // z-index宣言がある場合はその位置にエラーを表示、なければルール全体
-              result,
-              ruleName,
-            });
+            // すべてのz-index: auto以外の宣言に対して警告を表示
+            if (nonAutoZIndexItems && nonAutoZIndexItems.length > 0) {
+              for (const item of nonAutoZIndexItems) {
+                stylelint.utils.report({
+                  message: messages.expected,
+                  node: item.node, // 各z-index: auto以外の宣言ノードにエラーを表示
+                  result,
+                  ruleName,
+                });
+              }
+            } else {
+              // z-index宣言が見つからない場合（通常ありえないが念のため）
+              stylelint.utils.report({
+                message: messages.expected,
+                node: rule, // ルール全体にエラーを表示
+                result,
+                ruleName,
+              });
+            }
           }
         }
       });
