@@ -5,8 +5,6 @@
 
 A Stylelint plugin that enforces the use of `isolation: isolate` when using `position: absolute` with `z-index`. This plugin also supports autofix functionality.
 
-[日本語のREADME](./README.ja.md)
-
 ## Background
 
 To prevent stacking context issues, it's recommended to specify `isolation: isolate` when using `position: absolute` and `z-index` together. This plugin detects missing settings and applies automatic fixes when needed.
@@ -60,7 +58,3 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
   z-index: 10;
 }
 ```
-
-## License
-
-MIT
