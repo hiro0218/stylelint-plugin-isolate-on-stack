@@ -288,7 +288,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
     });
   });
 
-  it("should report correct message when pseudo-element has isolation: isolate", async () => {
+  it("should explain clearly why pseudo-elements with isolation: isolate are redundant", async () => {
     const result = await stylelint.lint({
       code: `
         .test::before {
@@ -305,8 +305,37 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       },
     });
 
+    // メッセージに「no effect on pseudo-elements」という文言が含まれていることを確認
     expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("has no effect on pseudo-elements");
+    expect(result.results[0].warnings[0].text).toContain("no effect on pseudo-elements");
+  });
+
+  it("verifies that all pseudo-elements are properly detected for isolation warning", async () => {
+    const pseudoElements = [
+      "::before", "::after", "::first-line", "::first-letter",
+      "::marker", "::placeholder", "::selection", "::backdrop"
+    ];
+
+    for (const pseudoElement of pseudoElements) {
+      const result = await stylelint.lint({
+        code: `
+          .test${pseudoElement} {
+            position: absolute;
+            z-index: 1;
+            isolation: isolate;
+          }
+        `,
+        config: {
+          plugins: [path.resolve(__dirname, "./index.js")],
+          rules: {
+            [ruleName]: true,
+          },
+        },
+      });
+
+      expect(result.results[0].warnings).toHaveLength(1,
+        `Pseudo-element ${pseudoElement} should trigger a warning with isolation: isolate`);
+    }
   });
 
   it("handles different property order (z-index before position)", async () => {
@@ -607,6 +636,153 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       `,
       warnings: 1,
       description: "should flag when there are multiple z-index values with at least one non-auto",
+    });
+  });
+
+  it("passes when only isolation: isolate is used (no position or z-index)", async () => {
+    await testRule({
+      code: `
+        .test {
+          isolation: isolate;
+        }
+      `,
+      warnings: 0,
+      description: "should pass when only isolation: isolate is used (creates stacking context unconditionally)",
+    });
+  });
+
+  it("passes with isolation: isolate even without position or z-index", async () => {
+    await testRule({
+      code: `
+        .test {
+          margin: 10px;
+          isolation: isolate;
+          padding: 5px;
+        }
+      `,
+      warnings: 0,
+      description: "should pass with isolation: isolate even without position or z-index",
+    });
+  });
+
+  it("handles visual example from example.css with nested stacking contexts", async () => {
+    await testRule({
+      code: `
+        /* Parent element (without isolation: isolate, with z-index added) */
+        .parent-without-isolation {
+          position: relative;
+          width: 300px;
+          height: 300px;
+          background-color: #f0f0f0;
+          z-index: 0; /* z-index added */
+        }
+
+        /* Child element 1 - Low z-index */
+        .child-1 {
+          position: absolute;
+          top: 50px;
+          left: 50px;
+          width: 100px;
+          height: 100px;
+          background-color: red;
+          z-index: 1;
+        }
+
+        /* Grandchild element - Very high z-index */
+        .grandchild {
+          position: absolute;
+          top: 25px;
+          left: 25px;
+          width: 50px;
+          height: 50px;
+          background-color: green;
+          z-index: 999; /* Very high value */
+        }
+      `,
+      warnings: 3, // 3 errors (3 z-index specifications without isolation: isolate)
+      description: "should flag all elements with stacking positions and z-index in visual example",
+    });
+  });
+
+  it("handles visual example with correct isolation usage", async () => {
+    await testRule({
+      code: `
+        /* Parent element (with isolation: isolate) */
+        .parent-with-isolation {
+          position: relative;
+          width: 300px;
+          height: 300px;
+          background-color: #f0f0f0;
+          isolation: isolate; /* Correctly specified */
+        }
+
+        /* Child element 1 - Low z-index */
+        .child-1 {
+          position: absolute;
+          top: 50px;
+          left: 50px;
+          width: 100px;
+          height: 100px;
+          background-color: red;
+          z-index: 1;
+          isolation: isolate; /* Correctly specified */
+        }
+
+        /* Grandchild element - Very high z-index */
+        .grandchild {
+          position: absolute;
+          top: 25px;
+          left: 25px;
+          width: 50px;
+          height: 50px;
+          background-color: green;
+          z-index: 999; /* Very high value */
+          isolation: isolate; /* Correctly specified */
+        }
+      `,
+      warnings: 0, // All elements correctly specify isolation: isolate
+      description: "should pass when all elements with stacking positions and z-index have isolation: isolate",
+    });
+  });
+});
+
+describe("Understanding isolation property and stacking contexts", () => {
+  it("isolation: isolate creates a stacking context regardless of position or z-index", async () => {
+    await testRule({
+      code: `
+        /* isolation: isolate alone can create a new stacking context */
+        .standalone-isolation {
+          isolation: isolate;
+        }
+
+        /* isolation: isolate creates stacking context even without position */
+        .isolation-with-z-index {
+          z-index: 5; /* Normally, z-index has no effect without position */
+          isolation: isolate; /* But with isolation: isolate, a stacking context is created */
+        }
+      `,
+      warnings: 0,
+      description: "isolation: isolate should create stacking context regardless of other properties",
+    });
+  });
+
+  it("ensures z-index auto does not create a stacking context even with position", async () => {
+    await testRule({
+      code: `
+        .position-with-z-index-auto {
+          position: absolute;
+          z-index: auto; /* auto does not create a stacking context */
+        }
+
+        .position-with-z-index-auto-multiple {
+          position: relative;
+          z-index: auto;
+          margin: 10px;
+          z-index: auto; /* Multiple auto values still don't create a stacking context */
+        }
+      `,
+      warnings: 0,
+      description: "z-index: auto should not create stacking context even with position",
     });
   });
 });
