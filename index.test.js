@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const { ruleName } = plugin;
 
-// 共通のテスト設定を定義
+// Define common test configuration
 const testConfig = {
   plugins: [path.resolve(__dirname, "./index.js")],
   rules: {
@@ -15,7 +15,7 @@ const testConfig = {
   },
 };
 
-// 共通のスタイルリント実行関数
+// Common function for stylelint execution
 const lintCSS = async (code, fix = false) => {
   return await stylelint.lint({
     code,
@@ -24,7 +24,7 @@ const lintCSS = async (code, fix = false) => {
   });
 };
 
-// 共通のアサーション関数
+// Common assertion functions
 const expectNoWarnings = (result) => {
   expect(result.errored).toBeFalsy();
   expect(result.results[0].warnings).toHaveLength(0);
@@ -218,17 +218,17 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           [ruleName]: true,
         },
       },
-      fix: true, // 明示的にfixをtrueに設定
+      fix: true, // Explicitly set fix to true
     });
 
-    // 修正が適用されていないことを確認
+    // Verify that no fix was applied
     expect(result.code).toEqual(`
         .test::after {
           position: relative;
           z-index: 1;
         }
       `);
-    // 疑似要素にはエラーを報告しないため、警告は0になるはず
+    // Should have 0 warnings since we don't report errors for pseudo-elements
     expect(result.results[0].warnings).toHaveLength(0);
   });
 
@@ -273,7 +273,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
       },
     });
 
-    // メッセージに「no effect on pseudo-elements」という文言が含まれていることを確認
+    // Verify that the message contains "no effect on pseudo-elements"
     expect(result.results[0].warnings).toHaveLength(1);
     expect(result.results[0].warnings[0].text).toContain("no effect on pseudo-elements");
   });
@@ -683,39 +683,39 @@ describe("Understanding isolation property and stacking contexts", () => {
 
 describe("Edge cases and error handling", () => {
   it("handles rules without nodes property", async () => {
-    // このテストは特殊な条件を作成するためにカスタム処理が必要
-    // 空のコメントのみのコードを使用
+    // This test requires custom processing to create special conditions
+    // Using code with only an empty comment
     const result = await lintCSS(`
-      /* 空のコメントはPostCSSによって処理され、特殊なケースとなる */
+      /* Empty comments are processed by PostCSS and create a special case */
     `);
 
-    // エラーが発生せず、警告もないことを確認
+    // Verify no errors or warnings occur
     expectNoWarnings(result);
   });
 
   it("handles special case for empty CSS", async () => {
-    // 完全に空のCSSファイルのケース
+    // Case for completely empty CSS file
     const result = await lintCSS(``);
 
-    // エラーが発生せず、警告もないことを確認
+    // Verify no errors or warnings occur
     expectNoWarnings(result);
   });
 
   it("handles position without z-index", async () => {
-    // z-indexを持たないポジショニング要素のケース
+    // Test case for positioned element without z-index
     const result = await lintCSS(`
       .test {
         position: absolute;
-        /* z-indexなし */
+        /* No z-index specified */
       }
     `);
 
-    // エラーが発生せず、警告もないことを確認
+    // Verify no errors or warnings occur
     expectNoWarnings(result);
   });
 
   it("handles position with z-index auto", async () => {
-    // z-index: autoを持つポジショニング要素のケース
+    // Test case for positioned element with z-index: auto
     const result = await lintCSS(`
       .test {
         position: absolute;
@@ -723,12 +723,12 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // エラーが発生せず、警告もないことを確認
+    // Verify no errors or warnings occur
     expectNoWarnings(result);
   });
 
   it("handles non-stacking position values", async () => {
-    // スタッキングコンテキストを作成しない position: static のケース
+    // Test case for position: static which doesn't create a stacking context
     const result = await lintCSS(`
       .test {
         position: static;
@@ -736,12 +736,12 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // スタッキングコンテキストを作成しないので警告はない
+    // No warnings expected since position: static doesn't create a stacking context
     expectNoWarnings(result);
   });
 
   it("tries to cover more edge cases including special selectors", async () => {
-    // 特殊なセレクタと未カバー行をカバーするテスト
+    // Test with special selectors to cover uncovered lines
     const result = await lintCSS(`
       /* Empty selector - should not crash */
       {}
@@ -764,16 +764,16 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // このテストでは警告が発生するべきだが、クラッシュしないことが重要
+    // This test should produce warnings, but it's important that it doesn't crash
     expect(result.errored).toBeTruthy();
-    // 少なくとも1つの警告が出るべき
+    // Should have at least one warning
     expect(result.results[0].warnings.length).toBeGreaterThan(0);
   });
 
   it("tests complex selectors with position and z-index", async () => {
-    // 複雑なセレクタを持つテスト
+    // Test with complex selectors
     const result = await lintCSS(`
-      /* 複雑なセレクタで z-index と position を使用 */
+      /* Using complex selectors with z-index and position */
       div[data-test="true"] > span:first-child,
       section:not(.hidden) ~ article {
         position: absolute;
@@ -781,14 +781,14 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // 警告が出るべき
+    // Should have warnings
     expectWarnings(result, 1);
   });
 
   it("tests edge case with multiple different selectors", async () => {
-    // フォールバックのコードパスをカバーするためのテスト
+    // Test to cover fallback code paths
     const result = await lintCSS(`
-      /* 通常のセレクタと疑似要素セレクタが混在 */
+      /* Mix of normal selectors and pseudo-element selectors */
       .normal-selector,
       .pseudo-element::after,
       .another-normal {
@@ -796,11 +796,11 @@ describe("Edge cases and error handling", () => {
         z-index: 5;
       }
 
-      /* z-index: auto と非auto の混在 */
+      /* Mix of z-index: auto and non-auto values */
       .mixed-z-indices {
         position: absolute;
         z-index: auto;
-        /* 後でauto以外の値で上書き */
+        /* Overwritten later with non-auto value */
         z-index: 20;
       }
     `);
