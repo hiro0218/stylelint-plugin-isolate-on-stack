@@ -18,7 +18,7 @@ const CSS = Object.freeze({
 });
 
 // 疑似要素のパターン
-const pseudoElementPattern = /(::|:)(before|after|first-line|first-letter|marker|placeholder|selection|backdrop|cue|part|slotted)/;
+const PSEUDO_ELEMENT_PATTERN = /(::|:)(before|after|first-letter|first-line|selection|backdrop|placeholder|marker|spelling-error|grammar-error)/;
 
 const plugin = stylelint.createPlugin(
   ruleName,
@@ -39,7 +39,7 @@ const plugin = stylelint.createPlugin(
         // セレクタがカンマで区切られている場合は分割して処理
         const selectors = rule.selector.split(',').map(s => s.trim());
         // すべてのセレクタが疑似要素である場合はtrueになる
-        const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(pseudoElementPattern));
+        const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(PSEUDO_ELEMENT_PATTERN));
 
         let hasPositionStacking = false;
         let hasZIndex = false;
@@ -129,6 +129,14 @@ const plugin = stylelint.createPlugin(
             // すべてのz-index: auto以外の宣言に対して警告を表示
             if (nonAutoZIndexItems && nonAutoZIndexItems.length > 0) {
               for (const item of nonAutoZIndexItems) {
+                const selectors = item.node.parent.selector.split(',').map(s => s.trim());
+                const hasNormalSelector = selectors.some(selector => !PSEUDO_ELEMENT_PATTERN.test(selector));
+
+                if (!hasNormalSelector) {
+                  // すべて疑似要素の場合はエラーメッセージを表示しない
+                  continue;
+                }
+
                 stylelint.utils.report({
                   message: messages.expected,
                   node: item.node, // 各z-index: auto以外の宣言ノードにエラーを表示
@@ -137,13 +145,18 @@ const plugin = stylelint.createPlugin(
                 });
               }
             } else {
-              // z-index宣言が見つからない場合（通常ありえないが念のため）
-              stylelint.utils.report({
-                message: messages.expected,
-                node: rule, // ルール全体にエラーを表示
-                result,
-                ruleName,
-              });
+              const selectors = rule.selector.split(',').map(s => s.trim());
+              const hasNormalSelector = selectors.some(selector => !PSEUDO_ELEMENT_PATTERN.test(selector));
+
+              if (hasNormalSelector) {
+                // 通常のセレクタが含まれる場合のみエラーメッセージを表示
+                stylelint.utils.report({
+                  message: messages.expected,
+                  node: rule, // ルール全体にエラーを表示
+                  result,
+                  ruleName,
+                });
+              }
             }
           }
         }
