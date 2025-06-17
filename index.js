@@ -31,8 +31,8 @@ const plugin = stylelint.createPlugin(
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
 
       root.walkRules((rule) => {
-        // 宣言が不足している場合はスキップ
-        if (!rule.nodes || rule.nodes.length < 2) {
+        // ノードが存在しない場合はスキップ
+        if (!rule.nodes) {
           return;
         }
 
