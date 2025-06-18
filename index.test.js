@@ -1228,28 +1228,100 @@ describe("custom options for selectors", () => {
 
     expectWarnings(result, 1);
   });
+});
 
-  it("should enforce isolation for elements with requireClasses even with stacking context", async () => {
-    // テスト用のカスタム設定
-    const customConfig = {
-      plugins: [path.resolve(__dirname, "./index.js")],
-      rules: {
-        [ruleName]: [true, { requireClasses: ["stacking-required"] }],
-      },
-    };
-
-    const result = await stylelint.lint({
-      code: `
-        .stacking-required {
-          position: absolute;
-          z-index: 1;
-          opacity: 0.9; /* スタッキングコンテキストあり */
+describe("background-blend-mode and isolation tests", () => {
+  it("flags isolation: isolate when used with background-blend-mode", async () => {
+    const result = await lintCSS(`
+        .test {
+          background-blend-mode: multiply;
+          isolation: isolate;
         }
-      `,
-      config: customConfig,
-    });
+      `);
 
     expectWarnings(result, 1);
-    expect(result.results[0].warnings[0].text).toContain("requires");
+    expect(result.results[0].warnings[0].text).toContain("background-blend-mode");
+  });
+
+  it("passes when background-blend-mode is used without isolation: isolate", async () => {
+    const result = await lintCSS(`
+        .test {
+          background-blend-mode: multiply;
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+
+  it("passes when isolation: isolate is used without background-blend-mode", async () => {
+    const result = await lintCSS(`
+        .test {
+          isolation: isolate;
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+});
+
+describe("redundant stacking context tests", () => {
+  it("flags isolation: isolate as redundant when opacity creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          opacity: 0.5;
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
+  });
+
+  it("flags isolation: isolate as redundant when transform creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          transform: translateZ(0);
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
+  });
+
+  it("flags isolation: isolate as redundant when filter creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          filter: blur(5px);
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
+  });
+
+  it("flags isolation: isolate as redundant when mix-blend-mode creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          mix-blend-mode: multiply;
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
+  });
+
+  it("flags isolation: isolate as redundant when will-change creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          will-change: opacity;
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
   });
 });

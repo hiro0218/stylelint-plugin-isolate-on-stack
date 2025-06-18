@@ -13,6 +13,8 @@ const messages = stylelint.utils.ruleMessages(ruleName, {
     "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
   redundantStackingContext:
     "'isolation: isolate' is redundant because a stacking context already exists due to other properties.",
+  ineffectiveOnBackgroundBlend:
+    "'isolation: isolate' has no effect on 'background-blend-mode' and should be removed.",
   conflictWarning:
     "Adding 'isolation: isolate' may have unexpected effects on layout or cascade.",
 });
@@ -34,6 +36,7 @@ const CSS = Object.freeze({
     MASK_IMAGE: "mask-image",
     MASK_BORDER: "mask-border",
     MIX_BLEND_MODE: "mix-blend-mode",
+    BACKGROUND_BLEND_MODE: "background-blend-mode",
     WILL_CHANGE: "will-change",
   },
   // Values that create stacking contexts when specified in will-change
@@ -244,6 +247,7 @@ const plugin = stylelint.createPlugin(
             prop === stackingContextProps.MASK_IMAGE ||
             prop === stackingContextProps.MASK_BORDER ||
             prop === stackingContextProps.MIX_BLEND_MODE ||
+            prop === stackingContextProps.BACKGROUND_BLEND_MODE ||
             prop === stackingContextProps.WILL_CHANGE
           ) {
             if (!declMap.has(prop)) {
@@ -378,6 +382,15 @@ const plugin = stylelint.createPlugin(
           const mixBlendModeItems = declMap.get(stackingContextProps.MIX_BLEND_MODE);
           if (mixBlendModeItems.some(item => item.value !== "normal")) {
             hasOtherStackingContext = true;
+          }
+        }
+
+        // background-blend-modeが指定されている場合 - isolationとの無効な組み合わせを検出
+        let hasBackgroundBlendMode = false;
+        if (declMap.has(stackingContextProps.BACKGROUND_BLEND_MODE) && declMap.get(stackingContextProps.BACKGROUND_BLEND_MODE).length > 0) {
+          const backgroundBlendModeItems = declMap.get(stackingContextProps.BACKGROUND_BLEND_MODE);
+          if (backgroundBlendModeItems.some(item => item.value !== "normal")) {
+            hasBackgroundBlendMode = true;
           }
         }
 
@@ -527,6 +540,17 @@ const plugin = stylelint.createPlugin(
           if (isolationItem) {
             stylelint.utils.report({
               message: messages.redundantStackingContext,
+              node: isolationItem.node,
+              result,
+              ruleName,
+            });
+          }
+        } else if (hasIsolationIsolate && hasBackgroundBlendMode) {
+          // isolation: isolateとbackground-blend-modeが併用されている場合（無効な組み合わせ）
+          const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
+          if (isolationItem) {
+            stylelint.utils.report({
+              message: messages.ineffectiveOnBackgroundBlend,
               node: isolationItem.node,
               result,
               ruleName,
