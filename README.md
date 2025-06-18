@@ -183,7 +183,7 @@ An array of class names to ignore. When a selector contains any of these class n
 
 #### `ignoreSelectors`
 
-正規表現パターンの配列として指定します。指定されたパターンにマッチするセレクタに対しては、ルールを適用しません。より細かく特定のセレクタを除外したい場合に有用です。
+An array of regular expression patterns. The rule will not be applied to selectors that match the specified patterns. This is useful for excluding specific selectors with finer granularity.
 
 ```css
 /* No error will be reported if '\.header' is in ignoreSelectors */
@@ -195,7 +195,7 @@ An array of class names to ignore. When a selector contains any of these class n
 
 #### `ignoreElements`
 
-HTML要素名の配列として指定します。指定された要素に対しては、ルールを適用しません。特定のHTML要素を除外したい場合に有用です。
+An array of HTML element names. The rule will not be applied to the specified elements. This is useful when you want to exclude specific HTML elements.
 
 ```css
 /* No error will be reported if 'header' is in ignoreElements */
@@ -207,7 +207,7 @@ header {
 
 #### `requireClasses`
 
-クラス名の配列として指定します。指定されたクラスを含むセレクタには、常に `isolation: isolate` が必須となります。位置指定プロパティや `z-index` が存在しない場合でも、指定されたクラスにはisolationを強制したい場合に有用です。
+An array of class names. Selectors containing the specified classes will always require `isolation: isolate`. This is useful when you want to enforce isolation for specific classes even without position properties or `z-index`.
 
 ```css
 /* Error will be reported if 'stacking-required' is in requireClasses, even without position or z-index */
