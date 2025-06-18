@@ -8,13 +8,13 @@ const messages = stylelint.utils.ruleMessages(ruleName, {
     "This selector requires 'isolation: isolate' based on configured rules.",
   fixed: "'isolation: isolate' was automatically added.",
   fixedWithWarning: "'isolation: isolate' was automatically added, but may affect layout or rendering.",
-  notFixed: "自動修正は適用されませんでした。既存のプロパティとの競合を避けるため手動で修正してください。",
+  notFixed: "Automatic fix was not applied. Please fix manually to avoid conflicts with existing properties.",
   redundant:
     "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
   redundantStackingContext:
     "'isolation: isolate' is redundant because a stacking context already exists due to other properties.",
   conflictWarning:
-    "'isolation: isolate' の追加がレイアウトやカスケードに予期せぬ影響を与える可能性があります。",
+    "Adding 'isolation: isolate' may have unexpected effects on layout or cascade.",
 });
 
 const CSS = Object.freeze({
@@ -23,7 +23,6 @@ const CSS = Object.freeze({
   Z_INDEX_KEY: "z-index",
   ISOLATION_KEY: "isolation",
   ISOLATION_VALUE_ISOLATE: "isolate",
-  // スタッキングコンテキストを作成するプロパティ
   STACKING_CONTEXT_PROPS: {
     OPACITY: "opacity",
     TRANSFORM: "transform",
@@ -37,7 +36,7 @@ const CSS = Object.freeze({
     MIX_BLEND_MODE: "mix-blend-mode",
     WILL_CHANGE: "will-change",
   },
-  // will-changeで指定された場合にスタッキングコンテキストを作成する値
+  // Values that create stacking contexts when specified in will-change
   WILL_CHANGE_STACKING_VALUES: [
     "opacity",
     "transform",
@@ -50,24 +49,24 @@ const CSS = Object.freeze({
     "mask-border",
     "mix-blend-mode"
   ],
-  // isolationプロパティの影響度レベル
+  // Impact levels for isolation property
   ISOLATION_IMPACT_LEVELS: {
-    NONE: 0,       // 影響なし
-    LOW: 1,        // 低影響（CSSの他の部分に大きな影響を与えない）
-    MEDIUM: 2,     // 中程度の影響（特定の条件下で他のスタイルに影響を与える可能性がある）
-    HIGH: 3,       // 高影響（多くのケースで他のスタイルに影響を与える可能性が高い）
-    CRITICAL: 4    // 重大な影響（確実に他のスタイルに影響を与える）
+    NONE: 0,       // No impact
+    LOW: 1,        // Low impact (doesn't significantly affect other CSS)
+    MEDIUM: 2,     // Medium impact (may affect other styles under specific conditions)
+    HIGH: 3,       // High impact (likely to affect other styles in many cases)
+    CRITICAL: 4    // Critical impact (definitely affects other styles)
   }
 });
 
-// 疑似要素のパターン
+// Pseudo-element pattern
 const PSEUDO_ELEMENT_PATTERN = /(::|:)(before|after|first-letter|first-line|selection|backdrop|placeholder|marker|spelling-error|grammar-error)/;
 
 /**
- * 既存のプロパティと新しく追加するisolationプロパティとの競合を評価する
- * @param {Object} declMap - 宣言マップ
- * @param {Array} selectors - セレクタのリスト
- * @returns {Object} 評価結果（影響度と理由）
+ * Evaluate the potential impact of adding an isolation property to existing declarations
+ * @param {Object} declMap - Declaration map
+ * @param {Array} selectors - List of selectors
+ * @returns {Object} Evaluation result (impact level and reason)
  */
 function evaluateIsolationImpact(declMap, selectors) {
   const result = {
@@ -76,53 +75,53 @@ function evaluateIsolationImpact(declMap, selectors) {
     shouldApplyFix: true
   };
 
-  // 複合セレクタが使用されている場合は影響度を上げる
+  // Increase impact level if complex selectors are used
   const hasComplexSelectors = selectors.some(selector =>
     selector.includes(' ') || selector.includes('>') || selector.includes('+') || selector.includes('~'));
 
   if (hasComplexSelectors) {
     result.impactLevel = CSS.ISOLATION_IMPACT_LEVELS.MEDIUM;
-    result.reason = "複合セレクタが使用されているため、新しいスタッキングコンテキストがレンダリングに影響する可能性があります";
+    result.reason = "Complex selectors used; new stacking context may affect rendering";
   }
 
-  // flexboxやgridの子要素の場合、isolationの追加は配置に影響する可能性がある
+  // For flexbox or grid children, adding isolation may affect layout
   if (declMap.has('display')) {
     const displayValues = declMap.get('display').map(item => item.value);
     if (displayValues.some(value => value.includes('flex') || value.includes('grid'))) {
       result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.MEDIUM);
-      result.reason = "Flexboxまたはグリッドレイアウト内の要素に対して新しいスタッキングコンテキストを作成すると、予期せぬレイアウト問題が発生する可能性があります";
+      result.reason = "Creating new stacking context on flex/grid elements may cause unexpected layout issues";
     }
   }
 
-  // 特定のプロパティが既に存在し、isolationと相互作用する可能性がある場合
+  // When specific properties already exist that may interact with isolation
   const interactiveProps = ['clip', 'clip-path', 'transform', 'perspective', 'filter'];
   for (const prop of interactiveProps) {
     if (declMap.has(prop)) {
       result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-      result.reason = `'${prop}'プロパティがすでに存在し、新しいスタッキングコンテキストとの相互作用により、意図しない視覚効果が生じる可能性があります`;
+      result.reason = `'${prop}' property already exists; interaction with new stacking context may cause unintended visual effects`;
     }
   }
 
-  // 要素がページ内で重要な位置にある場合（例：fixed位置指定）
+  // For elements with important positioning (e.g., fixed positioning)
   if (declMap.has('position') && declMap.get('position').some(item => item.value === 'fixed')) {
     result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "固定位置の要素に新しいスタッキングコンテキストを作成すると、他の固定要素との相対的な順序に影響する可能性があります";
+    result.reason = "Creating a new stacking context on fixed elements may affect relative ordering with other fixed elements";
   }
 
-  // 親子関係やスタッキングの関係が非常に複雑なセレクタの場合
+  // For very complex selectors involving parent-child relationships or stacking
   const hasVeryComplexSelectors = selectors.some(selector =>
-    (selector.match(/\s/g) || []).length > 2 || // 3つ以上のスペース（複雑な子孫セレクタ）
-    (selector.match(/>/g) || []).length > 2);   // 3つ以上の直接子セレクタ
+    (selector.match(/\s/g) || []).length > 2 || // More than 2 spaces (complex descendant selectors)
+    (selector.match(/>/g) || []).length > 2);   // More than 2 direct child selectors
 
   if (hasVeryComplexSelectors) {
     result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "非常に複雑なセレクタ構造に新しいスタッキングコンテキストを追加すると、DOM階層全体のレンダリングに影響する可能性があります";
+    result.reason = "Adding new stacking context to very complex selector structure may affect rendering throughout the DOM hierarchy";
   }
 
-  // position: stickyの場合の特別な処理
+  // Special handling for position: sticky
   if (declMap.has('position') && declMap.get('position').some(item => item.value === 'sticky')) {
     result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "sticky要素に新しいスタッキングコンテキストを作成すると、スクロール動作やスタック順序に影響する可能性があります";
+    result.reason = "Creating new stacking context on sticky elements may affect scroll behavior and stacking order";
   }
 
   // クリティカルな影響度の場合は自動修正を適用しない
@@ -145,7 +144,6 @@ const plugin = stylelint.createPlugin(
       const stackingContextProps = CSS.STACKING_CONTEXT_PROPS;
       const willChangeStackingValues = CSS.WILL_CHANGE_STACKING_VALUES;
 
-      // オプション設定
       // 注: ignoreWhenStackingContextExistsオプションは非推奨、現在は常にtrue扱い
       const ignoreClasses = Array.isArray(secondaryOptions?.ignoreClasses)
         ? secondaryOptions.ignoreClasses
@@ -454,8 +452,8 @@ const plugin = stylelint.createPlugin(
                 if (impactResult.impactLevel >= CSS.ISOLATION_IMPACT_LEVELS.MEDIUM && impactResult.reason) {
                   rule.insertAfter(lastZIndexDecl, {
                     type: 'comment',
-                    text: ` 注意: ${impactResult.reason}`,
-                    raws: { before: '\n          ' } // コメントの前に改行を入れる
+                    text: ` Note: ${impactResult.reason}`,
+                    raws: { before: '\n          ' } // Add newline before comment
                   });
 
                   // 修正レポートを出力（警告付き）
