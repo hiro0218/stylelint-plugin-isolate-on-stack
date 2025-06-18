@@ -4,6 +4,8 @@ const ruleName = "isolate-on-stack/isolation-for-position-zindex";
 const messages = stylelint.utils.ruleMessages(ruleName, {
   expected:
     "Expected 'isolation: isolate' when using 'position' with a stacking value and 'z-index'.",
+  expectedRequired:
+    "This selector requires 'isolation: isolate' based on configured rules.",
   fixed: "'isolation: isolate' was automatically added.",
   redundant:
     "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
@@ -66,6 +68,15 @@ const plugin = stylelint.createPlugin(
       const ignoreClasses = Array.isArray(secondaryOptions?.ignoreClasses)
         ? secondaryOptions.ignoreClasses
         : [];
+      const ignoreSelectors = Array.isArray(secondaryOptions?.ignoreSelectors)
+        ? secondaryOptions.ignoreSelectors
+        : [];
+      const requireClasses = Array.isArray(secondaryOptions?.requireClasses)
+        ? secondaryOptions.requireClasses
+        : [];
+      const ignoreElements = Array.isArray(secondaryOptions?.ignoreElements)
+        ? secondaryOptions.ignoreElements
+        : [];
 
       root.walkRules((rule) => {
         // ノードが存在しない場合はスキップ
@@ -87,12 +98,41 @@ const plugin = stylelint.createPlugin(
           });
         });
 
+        // 無視すべきセレクタパターンにマッチするかチェック
+        const shouldIgnoreBySelector = ignoreSelectors.length > 0 && selectors.some(selector => {
+          return ignoreSelectors.some(pattern => {
+            try {
+              const regex = new RegExp(pattern);
+              return regex.test(selector);
+            } catch {
+              // 無効な正規表現の場合はfalseを返す
+              return false;
+            }
+          });
+        });
+
+        // 無視すべき要素が含まれているかチェック
+        const shouldIgnoreByElement = ignoreElements.length > 0 && selectors.some(selector => {
+          return ignoreElements.some(element => {
+            const elementPattern = new RegExp(`^${element}(\\s|$|:|::|\\.)|\\s+${element}(\\s|$|:|::|\\.)|(^|\\s)${element}$`);
+            return elementPattern.test(selector);
+          });
+        });
+
+        // isolation必須のクラスが含まれているかチェック
+        const hasRequiredClass = requireClasses.length > 0 && selectors.some(selector => {
+          return requireClasses.some(requiredClass => {
+            const classPattern = new RegExp(`\\.${requiredClass}(\\s|$|:|::|\\.)`);
+            return classPattern.test(selector);
+          });
+        });
+
         // 前後のコメントを検索してdisableコメントをチェック
         // 注: Stylelintの標準機能がコメント無効化を処理するため、ここでは常にfalseになる
         const hasDisableComment = false;
 
         // 無視すべき場合はスキップ
-        if (shouldIgnoreByClass || hasDisableComment) {
+        if (shouldIgnoreByClass || shouldIgnoreBySelector || shouldIgnoreByElement || hasDisableComment) {
           return;
         }
 
@@ -286,9 +326,10 @@ const plugin = stylelint.createPlugin(
               ruleName,
             });
           }
-        } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) {
+        } else if ((hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) ||
+          (hasRequiredClass && !hasIsolationIsolate)) {
           // すでに他のプロパティによりスタッキングコンテキストが作成されている場合は警告を出さない
-          if (ignoreWhenStackingContextExists && hasOtherStackingContext) {
+          if (ignoreWhenStackingContextExists && hasOtherStackingContext && !hasRequiredClass) {
             return;
           }
 
@@ -313,8 +354,10 @@ const plugin = stylelint.createPlugin(
                   continue;
                 }
 
+                // 必須クラスの場合は専用メッセージを表示
+                const message = hasRequiredClass ? messages.expectedRequired : messages.expected;
                 stylelint.utils.report({
-                  message: messages.expected,
+                  message: message,
                   node: item.node, // 各z-index: auto以外の宣言ノードにエラーを表示
                   result,
                   ruleName,
@@ -326,8 +369,10 @@ const plugin = stylelint.createPlugin(
 
               if (hasNormalSelector) {
                 // 通常のセレクタが含まれる場合のみエラーメッセージを表示
+                // 必須クラスの場合は専用メッセージを表示
+                const message = hasRequiredClass ? messages.expectedRequired : messages.expected;
                 stylelint.utils.report({
-                  message: messages.expected,
+                  message: message,
                   node: rule, // ルール全体にエラーを表示
                   result,
                   ruleName,

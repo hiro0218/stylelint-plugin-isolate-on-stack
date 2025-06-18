@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const { ruleName } = plugin;
+const { ruleName, messages } = plugin;
 
 // Define common test configuration
 const testConfig = {
@@ -1490,5 +1490,136 @@ describe("Edge cases and error handling", () => {
         expectWarnings(result);
       }
     }
+  });
+});
+
+// カスタマイズオプションのテスト
+describe("custom options for selectors", () => {
+  it("should ignore specified selectors using ignoreSelectors option", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .header {
+          position: absolute;
+          z-index: 100;
+        }
+        .footer {
+          position: fixed;
+          z-index: 50;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: [true, {
+            ignoreSelectors: ["\\.header"]
+          }],
+        },
+      },
+    });
+
+    // headerはignoreされるが、footerはエラーになる
+    expect(result.errored).toBeTruthy();
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("Expected 'isolation: isolate'");
+    // footerのセレクタのみに警告が表示される
+    expect(result.results[0].warnings[0].line).toBeGreaterThan(5);
+  });
+
+  it("should ignore specified elements using ignoreElements option", async () => {
+    const result = await stylelint.lint({
+      code: `
+        header {
+          position: absolute;
+          z-index: 100;
+        }
+        footer {
+          position: fixed;
+          z-index: 50;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: [true, {
+            ignoreElements: ["header"]
+          }],
+        },
+      },
+    });
+
+    // headerはignoreされるが、footerはエラーになる
+    expect(result.errored).toBeTruthy();
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("Expected 'isolation: isolate'");
+    // footerのセレクタのみに警告が表示される
+    expect(result.results[0].warnings[0].line).toBeGreaterThan(5);
+  });
+
+  it("should require isolation for specified classes using requireClasses option", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .stacking-required {
+          color: blue;
+        }
+        .another-class {
+          position: static;
+          color: red;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: [true, {
+            requireClasses: ["stacking-required"]
+          }],
+        },
+      },
+    });
+
+    // stacking-requiredクラスはisolationが必須
+    expect(result.errored).toBeTruthy();
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("This selector requires 'isolation: isolate'");
+  });
+
+  it("should correctly handle multiple custom options together", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .ignore-me {
+          position: absolute;
+          z-index: 10;
+        }
+        .require-me {
+          color: blue;
+        }
+        .normal-class {
+          position: fixed;
+          z-index: 5;
+        }
+        header {
+          position: sticky;
+          z-index: 2;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: [true, {
+            ignoreClasses: ["ignore-me"],
+            requireClasses: ["require-me"],
+            ignoreElements: ["header"]
+          }],
+        },
+      },
+    });
+
+    // ignore-meとheaderはignoreされ、require-meとnormal-classはエラーになる
+    expect(result.errored).toBeTruthy();
+    expect(result.results[0].warnings).toHaveLength(2);
+
+    // 警告メッセージを確認
+    const warningTexts = result.results[0].warnings.map(w => w.text);
+    expect(warningTexts).toContain(messages.expectedRequired);
+    expect(warningTexts).toContain(messages.expected);
   });
 });

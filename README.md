@@ -142,7 +142,10 @@ This plugin supports several configuration options to make it more flexible and 
       true,
       {
         "ignoreWhenStackingContextExists": true,
-        "ignoreClasses": ["no-isolation", "stacking-context"]
+        "ignoreClasses": ["no-isolation", "stacking-context"],
+        "ignoreSelectors": ["\\.header", "\\.banner"],
+        "ignoreElements": ["header", "footer"],
+        "requireClasses": ["stacking-required"]
       }
     ]
   }
@@ -183,6 +186,41 @@ An array of class names to ignore. When a selector contains any of these class n
 .element.no-isolation {
   position: fixed;
   z-index: 100;
+}
+```
+
+#### `ignoreSelectors`
+
+正規表現パターンの配列として指定します。指定されたパターンにマッチするセレクタに対しては、ルールを適用しません。より細かく特定のセレクタを除外したい場合に有用です。
+
+```css
+/* No error will be reported if '\.header' is in ignoreSelectors */
+.header {
+  position: fixed;
+  z-index: 100;
+}
+```
+
+#### `ignoreElements`
+
+HTML要素名の配列として指定します。指定された要素に対しては、ルールを適用しません。特定のHTML要素を除外したい場合に有用です。
+
+```css
+/* No error will be reported if 'header' is in ignoreElements */
+header {
+  position: sticky;
+  z-index: 5;
+}
+```
+
+#### `requireClasses`
+
+クラス名の配列として指定します。指定されたクラスを含むセレクタには、常に `isolation: isolate` が必須となります。位置指定プロパティや `z-index` が存在しない場合でも、指定されたクラスにはisolationを強制したい場合に有用です。
+
+```css
+/* Error will be reported if 'stacking-required' is in requireClasses, even without position or z-index */
+.stacking-required {
+  color: blue;
 }
 ```
 
