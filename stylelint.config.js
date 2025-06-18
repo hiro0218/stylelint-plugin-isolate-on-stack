@@ -2,7 +2,7 @@
 export default {
   plugins: ["./index.js"],
   rules: {
-    "isolate-on-stack/isolation-for-position-zindex": [
+    "isolate-on-stack/no-redundant-declaration": [
       true,
       {
         ignoreWhenStackingContextExists: true,

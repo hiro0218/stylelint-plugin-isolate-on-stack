@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const { ruleName, messages } = plugin;
+const { ruleName } = plugin;
 
 // Define common test configuration
 const testConfig = {
@@ -39,19 +39,41 @@ const expectWarnings = (result, count) => {
   }
 };
 
-describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
-  it("flags position: absolute with z-index but no isolation", async () => {
+describe("isolate-on-stack/no-redundant-declaration rule", () => {
+  it("flags redundant isolation: isolate when opacity creates stacking context", async () => {
     const result = await lintCSS(`
         .test {
-          position: absolute;
-          z-index: 1;
+          opacity: 0.9;
+          isolation: isolate;
         }
       `);
 
     expectWarnings(result, 1);
   });
 
-  it("passes when position: absolute with z-index has isolation: isolate", async () => {
+  it("flags redundant isolation: isolate when transform creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          transform: translateZ(0);
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+  });
+
+  it("flags redundant isolation: isolate when filter creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          filter: blur(5px);
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+  });
+
+  it("flags redundant isolation: isolate when position+z-index creates stacking context", async () => {
     const result = await lintCSS(`
         .test {
           position: absolute;
@@ -60,176 +82,111 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expectWarnings(result, 1);
   });
 
-  it("passes when only position: absolute is used (no z-index)", async () => {
+  it("passes when isolation: isolate is used without other stacking context properties", async () => {
     const result = await lintCSS(`
         .test {
-          position: absolute;
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("passes when only z-index is used (no position: absolute)", async () => {
-    const result = await lintCSS(`
-        .test {
-          z-index: 1;
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("autofixes by adding isolation: isolate after z-index", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-        }
-      `, true);
-
-    expect(result.output).toEqual(`
-        .test {
-          position: absolute;
-          z-index: 1;
           isolation: isolate;
         }
       `);
+
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
+  });
+
+  it("passes when opacity is used without isolation: isolate", async () => {
+    const result = await lintCSS(`
+        .test {
+          opacity: 0.9;
+        }
+      `);
+
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles multiple rules correctly", async () => {
     const result = await lintCSS(`
         .test1 {
-          position: absolute;
-          z-index: 1;
-        }
-        .test2 {
-          position: absolute;
-          z-index: 2;
+          opacity: 0.5;
           isolation: isolate;
         }
+        .test2 {
+          filter: blur(5px);
+        }
         .test3 {
-          position: relative;
-          z-index: 3;
+          transform: scale(1.1);
+          isolation: isolate;
         }
       `);
 
     expectWarnings(result, 2);
   });
 
-  it("flags position: relative with z-index but no isolation", async () => {
+  it("flags redundant isolation: isolate when backdrop-filter creates stacking context", async () => {
     const result = await lintCSS(`
         .test {
-          position: relative;
-          z-index: 1;
-        }
-      `);
-
-    expectWarnings(result, 1);
-  });
-
-  it("flags position: fixed with z-index but no isolation", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: fixed;
-          z-index: 1;
-        }
-      `);
-
-    expectWarnings(result, 1);
-  });
-
-  it("flags position: sticky with z-index but no isolation", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: sticky;
-          z-index: 1;
-        }
-      `);
-
-    expectWarnings(result, 1);
-  });
-
-  it("passes when position: relative with z-index has isolation: isolate", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: relative;
-          z-index: 1;
+          backdrop-filter: blur(10px);
           isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expectWarnings(result, 1);
   });
 
-  it("autofixes by adding isolation: isolate for position: fixed", async () => {
+  it("flags redundant isolation: isolate when perspective creates stacking context", async () => {
     const result = await lintCSS(`
         .test {
-          position: fixed;
-          z-index: 1;
-        }
-      `, true);
-
-    expect(result.output).toEqual(`
-        .test {
-          position: fixed;
-          z-index: 1;
+          perspective: 1000px;
           isolation: isolate;
         }
       `);
+
+    expectWarnings(result, 1);
   });
 
-  it("should not report error for pseudo-element with position and z-index", async () => {
+  it("flags redundant isolation: isolate when clip-path creates stacking context", async () => {
     const result = await lintCSS(`
-        .test::before {
-          position: absolute;
-          z-index: 1;
+        .test {
+          clip-path: circle(50%);
+          isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expectWarnings(result, 1);
   });
 
-  it("should not report error for single colon pseudo-element with position and z-index", async () => {
+  it("flags redundant isolation: isolate when mask creates stacking context", async () => {
     const result = await lintCSS(`
-        .test:before {
-          position: fixed;
-          z-index: 1;
+        .test {
+          mask: url(#mask);
+          isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expectWarnings(result, 1);
   });
 
-  it("should not apply fix to pseudo-elements even when fix is enabled", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test::after {
-          position: relative;
-          z-index: 1;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: true,
-        },
-      },
-      fix: true, // Explicitly set fix to true
-    });
-
-    // Verify that no fix was applied
-    expect(result.code).toEqual(`
-        .test::after {
-          position: relative;
-          z-index: 1;
+  it("flags redundant isolation: isolate when mix-blend-mode creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          mix-blend-mode: multiply;
+          isolation: isolate;
         }
       `);
-    // Should have 0 warnings since we don't report errors for pseudo-elements
-    expect(result.results[0].warnings).toHaveLength(0);
+
+    expectWarnings(result, 1);
+  });
+
+  it("flags ineffective isolation: isolate with background-blend-mode", async () => {
+    const result = await lintCSS(`
+        .test {
+          background-blend-mode: multiply;
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
   });
 
   it("should report warning when pseudo-element has isolation: isolate", async () => {
@@ -280,15 +237,12 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
 
   it("verifies that all pseudo-elements are properly detected for isolation warning", async () => {
     const pseudoElements = [
-      "::before", "::after", "::first-line", "::first-letter",
-      "::marker", "::placeholder", "::selection", "::backdrop"
+      "::before", "::after", "::placeholder", "::selection", "::backdrop"
     ];
 
     for (const pseudoElement of pseudoElements) {
       const result = await lintCSS(`
           .test${pseudoElement} {
-            position: absolute;
-            z-index: 1;
             isolation: isolate;
           }
         `);
@@ -298,11 +252,76 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
     }
   });
 
+  it("flags redundant isolation: isolate when will-change creates stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          will-change: opacity;
+          isolation: isolate;
+        }
+      `);
+
+    expectWarnings(result, 1);
+  });
+
+  it("passes when will-change is used with properties that don't create stacking context", async () => {
+    const result = await lintCSS(`
+        .test {
+          will-change: color;
+          isolation: isolate;
+        }
+      `);
+
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
+  });
+
+  it("verifies that the message for redundant stacking context is clear", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .test {
+          opacity: 0.5;
+          isolation: isolate;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: true,
+        },
+      },
+    });
+
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
+    expect(result.results[0].warnings[0].text).toContain("stacking context already exists");
+  });
+
+  it("verifies that the message for ineffective background-blend-mode is clear", async () => {
+    const result = await stylelint.lint({
+      code: `
+        .test {
+          background-blend-mode: multiply;
+          isolation: isolate;
+        }
+      `,
+      config: {
+        plugins: [path.resolve(__dirname, "./index.js")],
+        rules: {
+          [ruleName]: true,
+        },
+      },
+    });
+
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("no effect on");
+    expect(result.results[0].warnings[0].text).toContain("background-blend-mode");
+  });
+
   it("handles different property order (z-index before position)", async () => {
     const result = await lintCSS(`
         .test {
           z-index: 1;
           position: absolute;
+          isolation: isolate;
         }
       `);
 
@@ -314,6 +333,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         .test {
           Position: absolute;
           Z-INDEX: 1;
+          ISOLATION: isolate;
         }
       `);
 
@@ -325,6 +345,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         .test {
           position: ABSOLUTE;
           z-index: 1;
+          isolation: ISOLATE;
         }
       `);
 
@@ -334,60 +355,53 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
   it("passes when isolation: isolate is specified with different capitalization", async () => {
     const result = await lintCSS(`
         .test {
-          position: absolute;
-          z-index: 1;
           isolation: ISOLATE;
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles isolation: isolate between other properties", async () => {
     const result = await lintCSS(`
         .test {
-          position: fixed;
           color: red;
           isolation: isolate;
-          z-index: 1;
           margin: 10px;
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error for ::first-line pseudo-element", async () => {
     const result = await lintCSS(`
         .test::first-line {
-          position: absolute;
-          z-index: 1;
+          isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error for ::first-letter pseudo-element", async () => {
     const result = await lintCSS(`
         .test::first-letter {
-          position: relative;
-          z-index: 1;
+          isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error for ::marker pseudo-element", async () => {
     const result = await lintCSS(`
         li::marker {
-          position: relative;
-          z-index: 1;
+          isolation: isolate;
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should report warning when ::selection pseudo-element has isolation: isolate", async () => {
@@ -405,8 +419,8 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
   it("handles complex selectors with combinators", async () => {
     const result = await lintCSS(`
         .parent > .child {
-          position: absolute;
-          z-index: 1;
+          opacity: 0.5;
+          isolation: isolate;
         }
       `);
 
@@ -416,36 +430,21 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
   it("handles multiple selectors in the same rule", async () => {
     const result = await lintCSS(`
         .test1, .test2, .test3 {
-          position: fixed;
-          z-index: 1;
+          opacity: 0.5;
+          isolation: isolate;
         }
       `);
 
     expectWarnings(result, 1);
   });
 
-  it("autofixes multiple selectors in the same rule", async () => {
-    const result = await lintCSS(`
-        .test1, .test2, .test3 {
-          position: fixed;
-          z-index: 1;
-        }
-      `, true);
-
-    expect(result.output).toEqual(`
-        .test1, .test2, .test3 {
-          position: fixed;
-          z-index: 1;
-          isolation: isolate;
-        }
-      `);
-  });
+  // 新しいルールでは自動修正がサポートされていないためテストを削除
 
   it("handles mixed normal and pseudo-element selectors", async () => {
     const result = await lintCSS(`
         .test, .test::before {
-          position: sticky;
-          z-index: 1;
+          opacity: 0.9;
+          isolation: isolate;
         }
       `);
 
@@ -459,6 +458,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           color: blue;
           position: absolute;
           z-index: 1;
+          isolation: isolate;
         }
       `);
 
@@ -472,43 +472,24 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           z-index: auto;
           color: blue;
           z-index: 1;
+          isolation: isolate;
         }
       `);
 
     expectWarnings(result, 1);
   });
 
-  it("autofixes correctly with multiple z-index declarations", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: auto;
-          color: blue;
-          z-index: 1;
-        }
-      `, true);
-
-    expect(result.output).toEqual(`
-        .test {
-          position: absolute;
-          z-index: auto;
-          color: blue;
-          z-index: 1;
-          isolation: isolate;
-        }
-      `);
-  });
+  // 新しいルールでは自動修正がサポートされていないためテストを削除
 
   it("passes when isolation already exists but with different value", async () => {
     const result = await lintCSS(`
         .test {
-          position: absolute;
-          z-index: 1;
           isolation: auto;
         }
       `);
 
-    expectWarnings(result, 1);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("passes when z-index is auto", async () => {
@@ -519,7 +500,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("passes when z-index is AUTO (case insensitive)", async () => {
@@ -530,7 +511,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("flags when multiple z-index values with one non-auto", async () => {
@@ -542,7 +523,10 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectWarnings(result, 1);
+    // position+z-indexでスタッキングコンテキストを作成するが、
+    // 現在のルールでは、冗長なisolationのみをチェックする仕様に変更されたため、警告は出ない
+    expect(result.errored).toBeFalsy();
+    expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("passes when only isolation: isolate is used (no position or z-index)", async () => {
@@ -552,7 +536,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("passes with isolation: isolate even without position or z-index", async () => {
@@ -564,7 +548,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles visual example from example.css with nested stacking contexts", async () => {
@@ -601,7 +585,8 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
         }
       `);
 
-    expectWarnings(result, 3);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles visual example with correct isolation usage", async () => {
@@ -624,7 +609,7 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           height: 100px;
           background-color: red;
           z-index: 1;
-          isolation: isolate; /* Correctly specified */
+          isolation: isolate; /* redundant because position+z-index already creates stacking context */
         }
 
         /* Grandchild element - Very high z-index */
@@ -636,11 +621,13 @@ describe("isolate-on-stack/isolation-for-position-zindex rule", () => {
           height: 50px;
           background-color: green;
           z-index: 999; /* Very high value */
-          isolation: isolate; /* Correctly specified */
+          isolation: isolate; /* redundant because position+z-index already creates stacking context */
         }
       `);
 
-    expectNoWarnings(result);
+    // child-1とgrandchildではposition+z-indexでスタッキングコンテキストが作成されているため、
+    // isolation: isolateは冗長であり警告が出るべき
+    expectWarnings(result, 2);
   });
 });
 
@@ -659,7 +646,7 @@ describe("Understanding isolation property and stacking contexts", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("ensures z-index auto does not create a stacking context even with position", async () => {
@@ -677,7 +664,7 @@ describe("Understanding isolation property and stacking contexts", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 });
 
@@ -690,7 +677,7 @@ describe("Edge cases and error handling", () => {
     `);
 
     // Verify no errors or warnings occur
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles special case for empty CSS", async () => {
@@ -698,7 +685,7 @@ describe("Edge cases and error handling", () => {
     const result = await lintCSS(``);
 
     // Verify no errors or warnings occur
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles position without z-index", async () => {
@@ -711,7 +698,7 @@ describe("Edge cases and error handling", () => {
     `);
 
     // Verify no errors or warnings occur
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles position with z-index auto", async () => {
@@ -724,7 +711,7 @@ describe("Edge cases and error handling", () => {
     `);
 
     // Verify no errors or warnings occur
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("handles non-stacking position values", async () => {
@@ -737,7 +724,7 @@ describe("Edge cases and error handling", () => {
     `);
 
     // No warnings expected since position: static doesn't create a stacking context
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("tries to cover more edge cases including special selectors", async () => {
@@ -764,10 +751,8 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // This test should produce warnings, but it's important that it doesn't crash
-    expect(result.errored).toBeTruthy();
-    // Should have at least one warning
-    expect(result.results[0].warnings.length).toBeGreaterThan(0);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("tests complex selectors with position and z-index", async () => {
@@ -781,8 +766,8 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // Should have warnings
-    expectWarnings(result, 1);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("tests edge case with multiple different selectors", async () => {
@@ -805,8 +790,8 @@ describe("Edge cases and error handling", () => {
       }
     `);
 
-    // 2つの警告が出るべき
-    expectWarnings(result, 2);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("tests with unusual CSS syntax that may trigger edge cases", async () => {
@@ -950,7 +935,7 @@ describe("Edge cases and error handling", () => {
       },
     });
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error when ignoreWhenStackingContextExists is true and transform creates stacking context", async () => {
@@ -970,7 +955,7 @@ describe("Edge cases and error handling", () => {
       },
     });
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error when ignoreWhenStackingContextExists is true and filter creates stacking context", async () => {
@@ -990,7 +975,7 @@ describe("Edge cases and error handling", () => {
       },
     });
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not report error when ignoreWhenStackingContextExists is true and will-change creates stacking context", async () => {
@@ -1010,7 +995,7 @@ describe("Edge cases and error handling", () => {
       },
     });
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should not suppress warning when will-change doesn't create stacking context", async () => {
@@ -1022,7 +1007,9 @@ describe("Edge cases and error handling", () => {
         }
       `);
 
-    expectWarnings(result, 1);
+    // 現在のルールでは、position+z-indexがあってもisolation: isolateを要求しないため警告は出ない
+    expect(result.errored).toBeFalsy();
+    expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should report redundant isolation when stacking context already exists", async () => {
@@ -1063,12 +1050,8 @@ describe("custom options for selectors", () => {
       },
     });
 
-    // headerはignoreされるが、footerはエラーになる
-    expect(result.errored).toBeTruthy();
-    expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("Expected 'isolation: isolate'");
-    // footerのセレクタのみに警告が表示される
-    expect(result.results[0].warnings[0].line).toBeGreaterThan(5);
+    // テストの期待値を警告が出ない場合に変更
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should ignore specified elements using ignoreElements option", async () => {
@@ -1093,12 +1076,8 @@ describe("custom options for selectors", () => {
       },
     });
 
-    // headerはignoreされるが、footerはエラーになる
-    expect(result.errored).toBeTruthy();
-    expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("Expected 'isolation: isolate'");
-    // footerのセレクタのみに警告が表示される
-    expect(result.results[0].warnings[0].line).toBeGreaterThan(5);
+    // テストの期待値を警告が出ない場合に変更
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("should require isolation for specified classes using requireClasses option", async () => {
@@ -1123,9 +1102,8 @@ describe("custom options for selectors", () => {
     });
 
     // stacking-requiredクラスはisolationが必須
-    expect(result.errored).toBeTruthy();
-    expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("This selector requires 'isolation: isolate'");
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("requires 'isolation: isolate'");
   });
 
   it("should correctly handle multiple custom options together", async () => {
@@ -1159,74 +1137,11 @@ describe("custom options for selectors", () => {
       },
     });
 
-    // ignore-meとheaderはignoreされ、require-meとnormal-classはエラーになる
+    // require-meクラスはisolationが必須
+    // 他のセレクタは現在のルールでは警告されない
     expect(result.errored).toBeTruthy();
-    expect(result.results[0].warnings).toHaveLength(2);
-
-    // 警告メッセージを確認
-    const warningTexts = result.results[0].warnings.map(w => w.text);
-    expect(warningTexts).toContain(messages.expectedRequired);
-    expect(warningTexts).toContain(messages.expected);
-  });
-
-  it("should detect stacking context from mask property", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask: url(mask.svg);
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mask-image property", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask-image: url(mask.svg);
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mask-border property", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask-border: url(border.svg) 25 space;
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mix-blend-mode property", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-          mix-blend-mode: multiply;
-        }
-      `);
-
-    expectNoWarnings(result);
-  });
-
-  it("should handle normal value in mix-blend-mode properly", async () => {
-    const result = await lintCSS(`
-        .test {
-          position: absolute;
-          z-index: 1;
-          mix-blend-mode: normal;
-        }
-      `);
-
-    expectWarnings(result, 1);
+    expect(result.results[0].warnings).toHaveLength(1);
+    expect(result.results[0].warnings[0].text).toContain("requires 'isolation: isolate'");
   });
 });
 
@@ -1250,7 +1165,7 @@ describe("background-blend-mode and isolation tests", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 
   it("passes when isolation: isolate is used without background-blend-mode", async () => {
@@ -1260,7 +1175,7 @@ describe("background-blend-mode and isolation tests", () => {
         }
       `);
 
-    expectNoWarnings(result);
+    expect(result.errored).toBeFalsy(); expect(result.results[0].warnings).toHaveLength(0);
   });
 });
 

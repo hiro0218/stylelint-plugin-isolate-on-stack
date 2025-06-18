@@ -1,22 +1,17 @@
 import stylelint from "stylelint";
 
-const ruleName = "isolate-on-stack/isolation-for-position-zindex";
+const ruleName = "isolate-on-stack/no-redundant-declaration";
 const messages = stylelint.utils.ruleMessages(ruleName, {
-  expected:
-    "Expected 'isolation: isolate' when using 'position' with a stacking value and 'z-index'.",
-  expectedRequired:
-    "This selector requires 'isolation: isolate' based on configured rules.",
-  fixed: "'isolation: isolate' was automatically added.",
-  fixedWithWarning: "'isolation: isolate' was automatically added, but may affect layout or rendering.",
-  notFixed: "Automatic fix was not applied. Please fix manually to avoid conflicts with existing properties.",
-  redundant:
-    "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
   redundantStackingContext:
     "'isolation: isolate' is redundant because a stacking context already exists due to other properties.",
   ineffectiveOnBackgroundBlend:
     "'isolation: isolate' has no effect on 'background-blend-mode' and should be removed.",
-  conflictWarning:
-    "Adding 'isolation: isolate' may have unexpected effects on layout or cascade.",
+  redundant:
+    "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
+  expected:
+    "Expected 'isolation: isolate' to be specified when creating a stacking context with position and z-index.",
+  expectedRequired:
+    "This selector requires 'isolation: isolate' to properly isolate the stacking context."
 });
 
 const CSS = Object.freeze({
@@ -51,115 +46,64 @@ const CSS = Object.freeze({
     "mask-image",
     "mask-border",
     "mix-blend-mode"
-  ],
-  // Impact levels for isolation property
-  ISOLATION_IMPACT_LEVELS: {
-    NONE: 0,       // No impact
-    LOW: 1,        // Low impact (doesn't significantly affect other CSS)
-    MEDIUM: 2,     // Medium impact (may affect other styles under specific conditions)
-    HIGH: 3,       // High impact (likely to affect other styles in many cases)
-    CRITICAL: 4    // Critical impact (definitely affects other styles)
-  }
+  ]
 });
 
 // Pseudo-element pattern
 const PSEUDO_ELEMENT_PATTERN = /(::|:)(before|after|first-letter|first-line|selection|backdrop|placeholder|marker|spelling-error|grammar-error)/;
 
-/**
- * Evaluate the potential impact of adding an isolation property to existing declarations
- * @param {Object} declMap - Declaration map
- * @param {Array} selectors - List of selectors
- * @returns {Object} Evaluation result (impact level and reason)
- */
-function evaluateIsolationImpact(declMap, selectors) {
-  const result = {
-    impactLevel: CSS.ISOLATION_IMPACT_LEVELS.LOW,
-    reason: null,
-    shouldApplyFix: true
-  };
-
-  // Increase impact level if complex selectors are used
-  const hasComplexSelectors = selectors.some(selector =>
-    selector.includes(' ') || selector.includes('>') || selector.includes('+') || selector.includes('~'));
-
-  if (hasComplexSelectors) {
-    result.impactLevel = CSS.ISOLATION_IMPACT_LEVELS.MEDIUM;
-    result.reason = "Complex selectors used; new stacking context may affect rendering";
-  }
-
-  // For flexbox or grid children, adding isolation may affect layout
-  if (declMap.has('display')) {
-    const displayValues = declMap.get('display').map(item => item.value);
-    if (displayValues.some(value => value.includes('flex') || value.includes('grid'))) {
-      result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.MEDIUM);
-      result.reason = "Creating new stacking context on flex/grid elements may cause unexpected layout issues";
-    }
-  }
-
-  // When specific properties already exist that may interact with isolation
-  const interactiveProps = ['clip', 'clip-path', 'transform', 'perspective', 'filter'];
-  for (const prop of interactiveProps) {
-    if (declMap.has(prop)) {
-      result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-      result.reason = `'${prop}' property already exists; interaction with new stacking context may cause unintended visual effects`;
-    }
-  }
-
-  // For elements with important positioning (e.g., fixed positioning)
-  if (declMap.has('position') && declMap.get('position').some(item => item.value === 'fixed')) {
-    result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "Creating a new stacking context on fixed elements may affect relative ordering with other fixed elements";
-  }
-
-  // For very complex selectors involving parent-child relationships or stacking
-  const hasVeryComplexSelectors = selectors.some(selector =>
-    (selector.match(/\s/g) || []).length > 2 || // More than 2 spaces (complex descendant selectors)
-    (selector.match(/>/g) || []).length > 2);   // More than 2 direct child selectors
-
-  if (hasVeryComplexSelectors) {
-    result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "Adding new stacking context to very complex selector structure may affect rendering throughout the DOM hierarchy";
-  }
-
-  // Special handling for position: sticky
-  if (declMap.has('position') && declMap.get('position').some(item => item.value === 'sticky')) {
-    result.impactLevel = Math.max(result.impactLevel, CSS.ISOLATION_IMPACT_LEVELS.HIGH);
-    result.reason = "Creating new stacking context on sticky elements may affect scroll behavior and stacking order";
-  }
-
-  // クリティカルな影響度の場合は自動修正を適用しない
-  if (result.impactLevel >= CSS.ISOLATION_IMPACT_LEVELS.CRITICAL) {
-    result.shouldApplyFix = false;
-  }
-
-  return result;
-}
+// 疑似要素の中でもスタッキングコンテキストが許可されているもの
+const STACKING_ALLOWED_PSEUDO_ELEMENTS = ["first-letter", "first-line", "marker"];
 
 const plugin = stylelint.createPlugin(
   ruleName,
-  function (primaryOption, secondaryOptions, context) {
+  function (primaryOption, secondaryOptions = {}) {
     return function (root, result) {
-      const positionKey = CSS.POSITION_KEY;
-      const stackingValues = CSS.POSITION_STACKING_VALUES;
-      const zIndexKey = CSS.Z_INDEX_KEY;
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
       const stackingContextProps = CSS.STACKING_CONTEXT_PROPS;
       const willChangeStackingValues = CSS.WILL_CHANGE_STACKING_VALUES;
 
-      // 注: ignoreWhenStackingContextExistsオプションは非推奨、現在は常にtrue扱い
-      const ignoreClasses = Array.isArray(secondaryOptions?.ignoreClasses)
-        ? secondaryOptions.ignoreClasses
-        : [];
-      const ignoreSelectors = Array.isArray(secondaryOptions?.ignoreSelectors)
-        ? secondaryOptions.ignoreSelectors
-        : [];
-      const requireClasses = Array.isArray(secondaryOptions?.requireClasses)
-        ? secondaryOptions.requireClasses
-        : [];
-      const ignoreElements = Array.isArray(secondaryOptions?.ignoreElements)
-        ? secondaryOptions.ignoreElements
-        : [];
+      // カスタムオプションの処理
+      const ignoreWhenStackingContextExists = secondaryOptions.ignoreWhenStackingContextExists || false;
+      const ignoreSelectors = secondaryOptions.ignoreSelectors || [];
+      const ignoreElements = secondaryOptions.ignoreElements || [];
+      const ignoreClasses = secondaryOptions.ignoreClasses || [];
+      const requireClasses = secondaryOptions.requireClasses || [];
+
+      // セレクタが無視すべきか判定する関数
+      const shouldIgnoreSelector = (selector) => {
+        // 正規表現パターンが合致する場合は無視
+        if (ignoreSelectors.some(pattern => new RegExp(pattern).test(selector))) {
+          return true;
+        }
+
+        // 要素名が無視リストに含まれる場合は無視
+        if (ignoreElements.some(element => {
+          const elementPattern = new RegExp(`^${element}(\\s|$|[.#:[])`);
+          return elementPattern.test(selector);
+        })) {
+          return true;
+        }
+
+        // クラス名が無視リストに含まれる場合は無視
+        if (ignoreClasses.some(className => {
+          const classPattern = new RegExp(`\\.${className}(\\s|$|[.#:[])`);
+          return classPattern.test(selector);
+        })) {
+          return true;
+        }
+
+        return false;
+      };
+
+      // セレクタがisolation: isolateを必須とするか判定する関数
+      const requiresIsolation = (selector) => {
+        return requireClasses.some(className => {
+          const classPattern = new RegExp(`\\.${className}(\\s|$|[.#:[])`);
+          return classPattern.test(selector);
+        });
+      };
 
       root.walkRules((rule) => {
         // ノードが存在しない場合はスキップ
@@ -169,62 +113,27 @@ const plugin = stylelint.createPlugin(
 
         // セレクタがカンマで区切られている場合は分割して処理
         const selectors = rule.selector.split(',').map(s => s.trim());
-        // すべてのセレクタが疑似要素である場合はtrueになる
-        const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(PSEUDO_ELEMENT_PATTERN));
 
-        // 無視すべきクラスが含まれているかチェック
-        const shouldIgnoreByClass = ignoreClasses.length > 0 && selectors.some(selector => {
-          return ignoreClasses.some(ignoreClass => {
-            // クラス名が含まれているかチェック
-            const classPattern = new RegExp(`\\.${ignoreClass}(\\s|$|:|::|\\.)`);
-            return classPattern.test(selector);
-          });
-        });
-
-        // 無視すべきセレクタパターンにマッチするかチェック
-        const shouldIgnoreBySelector = ignoreSelectors.length > 0 && selectors.some(selector => {
-          return ignoreSelectors.some(pattern => {
-            try {
-              const regex = new RegExp(pattern);
-              return regex.test(selector);
-            } catch {
-              // 無効な正規表現の場合はfalseを返す
-              return false;
-            }
-          });
-        });
-
-        // 無視すべき要素が含まれているかチェック
-        const shouldIgnoreByElement = ignoreElements.length > 0 && selectors.some(selector => {
-          return ignoreElements.some(element => {
-            const elementPattern = new RegExp(`^${element}(\\s|$|:|::|\\.)|\\s+${element}(\\s|$|:|::|\\.)|(^|\\s)${element}$`);
-            return elementPattern.test(selector);
-          });
-        });
-
-        // isolation必須のクラスが含まれているかチェック
-        const hasRequiredClass = requireClasses.length > 0 && selectors.some(selector => {
-          return requireClasses.some(requiredClass => {
-            const classPattern = new RegExp(`\\.${requiredClass}(\\s|$|:|::|\\.)`);
-            return classPattern.test(selector);
-          });
-        });
-
-        // 前後のコメントを検索してdisableコメントをチェック
-        // 注: Stylelintの標準機能がコメント無効化を処理するため、ここでは常にfalseになる
-        const hasDisableComment = false;
-
-        // 無視すべき場合はスキップ
-        if (shouldIgnoreByClass || shouldIgnoreBySelector || shouldIgnoreByElement || hasDisableComment) {
+        // すべてのセレクタが無視リストに含まれている場合はスキップ
+        if (selectors.every(selector => shouldIgnoreSelector(selector))) {
           return;
         }
 
-        let hasPositionStacking = false;
-        let hasZIndex = false;
+        // すべてのセレクタが疑似要素である場合はtrueになる
+        const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => {
+          const match = selector.match(PSEUDO_ELEMENT_PATTERN);
+          if (!match) return false;
+
+          // 疑似要素の種類を取得
+          const pseudoType = match[2];
+          // スタッキングコンテキストが許可されていない疑似要素かどうかをチェック
+          return !STACKING_ALLOWED_PSEUDO_ELEMENTS.includes(pseudoType.toLowerCase());
+        });
+
         let hasIsolationIsolate = false;
         let hasOtherStackingContext = false;
-        let lastZIndexDecl = null;
-        let nonAutoZIndexItems = [];
+        let hasBackgroundBlendMode = false;
+        let hasPositionZIndex = false;
 
         // 宣言を収集
         const declMap = new Map();
@@ -234,8 +143,6 @@ const plugin = stylelint.createPlugin(
           const prop = decl.prop.toLowerCase();
 
           if (
-            prop === positionKey ||
-            prop === zIndexKey ||
             prop === isolationKey ||
             prop === stackingContextProps.OPACITY ||
             prop === stackingContextProps.TRANSFORM ||
@@ -248,7 +155,9 @@ const plugin = stylelint.createPlugin(
             prop === stackingContextProps.MASK_BORDER ||
             prop === stackingContextProps.MIX_BLEND_MODE ||
             prop === stackingContextProps.BACKGROUND_BLEND_MODE ||
-            prop === stackingContextProps.WILL_CHANGE
+            prop === stackingContextProps.WILL_CHANGE ||
+            prop === CSS.POSITION_KEY ||
+            prop === CSS.Z_INDEX_KEY
           ) {
             if (!declMap.has(prop)) {
               declMap.set(prop, []);
@@ -260,30 +169,7 @@ const plugin = stylelint.createPlugin(
           }
         });
 
-        // 各プロパティの検証
-        if (declMap.has(positionKey)) {
-          for (const item of declMap.get(positionKey)) {
-            if (stackingValues.includes(item.value)) {
-              hasPositionStacking = true;
-              break;
-            }
-          }
-        }
-
-        if (declMap.has(zIndexKey)) {
-          // z-index: auto 以外の宣言を収集
-          const zItems = declMap.get(zIndexKey);
-
-          for (const item of zItems) {
-            if (item.value !== "auto") {
-              hasZIndex = true;
-              nonAutoZIndexItems.push(item);
-              // 最後のz-index宣言をautofix用に保存（複数ある場合は最後のものを使用）
-              lastZIndexDecl = item.node;
-            }
-          }
-        }
-
+        // isolation: isolateの検証
         if (declMap.has(isolationKey)) {
           for (const item of declMap.get(isolationKey)) {
             if (item.value === isolateValue) {
@@ -386,7 +272,6 @@ const plugin = stylelint.createPlugin(
         }
 
         // background-blend-modeが指定されている場合 - isolationとの無効な組み合わせを検出
-        let hasBackgroundBlendMode = false;
         if (declMap.has(stackingContextProps.BACKGROUND_BLEND_MODE) && declMap.get(stackingContextProps.BACKGROUND_BLEND_MODE).length > 0) {
           const backgroundBlendModeItems = declMap.get(stackingContextProps.BACKGROUND_BLEND_MODE);
           if (backgroundBlendModeItems.some(item => item.value !== "normal")) {
@@ -406,7 +291,23 @@ const plugin = stylelint.createPlugin(
           }
         }
 
-        // 条件判定と修正
+        // position + z-indexの組み合わせがあるかチェック
+        if (declMap.has(CSS.POSITION_KEY) && declMap.has(CSS.Z_INDEX_KEY)) {
+          const positionItems = declMap.get(CSS.POSITION_KEY);
+          const zIndexItems = declMap.get(CSS.Z_INDEX_KEY);
+
+          // positionがスタッキングコンテキストを生成する値かつz-indexがauto以外の場合
+          if (positionItems.some(item => CSS.POSITION_STACKING_VALUES.includes(item.value)) &&
+            zIndexItems.some(item => item.value !== "auto")) {
+            hasOtherStackingContext = true;
+            hasPositionZIndex = true;
+          }
+        }
+
+        // isolation: isolateが必須なセレクタがあるかチェック
+        const hasRequiredSelector = selectors.some(selector => requiresIsolation(selector));
+
+        // 条件判定
         if (isAllPseudoElements && hasIsolationIsolate) {
           // すべてのセレクタが疑似要素であり、isolation: isolateが指定されている場合は警告を出す
           const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
@@ -418,121 +319,6 @@ const plugin = stylelint.createPlugin(
               result,
               ruleName,
             });
-          }
-        } else if ((hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) ||
-          (hasRequiredClass && !hasIsolationIsolate)) {
-          // すでに他のプロパティによりスタッキングコンテキストが作成されている場合は警告を出さない
-          // ignoreWhenStackingContextExistsオプションに関わらず、スタッキングコンテキストが存在する場合は警告を抑止
-          if (hasOtherStackingContext && !hasRequiredClass) {
-            return;
-          }
-
-          // 疑似要素のみの場合（isAllPseudoElements=true）は何も警告を出さない
-          if (context && context.fix && lastZIndexDecl) {
-            // テストモードかどうかを判定
-            const isTestMode = process.env.NODE_ENV === 'test' || /jest/.test(process.argv.join(' '));
-
-            // テストモード時は単純に追加する（テストケースの期待値と一致させるため）
-            if (isTestMode) {
-              // 最後のz-index宣言の後ろにisolation: isolateを挿入
-              rule.insertAfter(lastZIndexDecl, {
-                prop: isolationKey,
-                value: isolateValue,
-                raws: { before: '\n          ' } // 新しい行に挿入（インデント付き）
-              });
-
-              // テストモード時は常に通常の修正レポートを出力
-              stylelint.utils.report({
-                message: messages.fixed,
-                node: lastZIndexDecl,
-                result,
-                ruleName,
-              });
-            } else {
-              // 通常の実行時は影響評価を行う
-              const impactResult = evaluateIsolationImpact(declMap, selectors);
-
-              // 影響レベルが許容範囲内の場合のみ修正を適用
-              if (impactResult.shouldApplyFix) {
-                // 最後のz-index宣言の後ろにisolation: isolateを挿入
-                rule.insertAfter(lastZIndexDecl, {
-                  prop: isolationKey,
-                  value: isolateValue,
-                  raws: { before: '\n          ' } // 新しい行に挿入（インデント付き）
-                });
-
-                // 中程度以上の影響がある場合はコメントで警告を追加
-                if (impactResult.impactLevel >= CSS.ISOLATION_IMPACT_LEVELS.MEDIUM && impactResult.reason) {
-                  rule.insertAfter(lastZIndexDecl, {
-                    type: 'comment',
-                    text: ` Note: ${impactResult.reason}`,
-                    raws: { before: '\n          ' } // Add newline before comment
-                  });
-
-                  // 修正レポートを出力（警告付き）
-                  stylelint.utils.report({
-                    message: messages.fixedWithWarning,
-                    node: lastZIndexDecl,
-                    result,
-                    ruleName,
-                  });
-                } else {
-                  // 通常の修正レポートを出力
-                  stylelint.utils.report({
-                    message: messages.fixed,
-                    node: lastZIndexDecl,
-                    result,
-                    ruleName,
-                  });
-                }
-              } else {
-                // 修正を適用しない場合はメッセージのみを報告
-                stylelint.utils.report({
-                  message: messages.notFixed,
-                  node: lastZIndexDecl,
-                  result,
-                  ruleName,
-                });
-              }
-            }
-          } else {
-            // 通常のセレクタが少なくとも1つ含まれる場合のみエラーメッセージを表示
-            // すべてのz-index: auto以外の宣言に対して警告を表示
-            if (nonAutoZIndexItems && nonAutoZIndexItems.length > 0) {
-              for (const item of nonAutoZIndexItems) {
-                const selectors = item.node.parent.selector.split(',').map(s => s.trim());
-                const hasNormalSelector = selectors.some(selector => !PSEUDO_ELEMENT_PATTERN.test(selector));
-
-                if (!hasNormalSelector) {
-                  // すべて疑似要素の場合はエラーメッセージを表示しない
-                  continue;
-                }
-
-                // 必須クラスの場合は専用メッセージを表示
-                const message = hasRequiredClass ? messages.expectedRequired : messages.expected;
-                stylelint.utils.report({
-                  message: message,
-                  node: item.node, // 各z-index: auto以外の宣言ノードにエラーを表示
-                  result,
-                  ruleName,
-                });
-              }
-            } else {
-              const selectors = rule.selector.split(',').map(s => s.trim());
-              const hasNormalSelector = selectors.some(selector => !PSEUDO_ELEMENT_PATTERN.test(selector));
-
-              if (hasNormalSelector) {
-                // 通常のセレクタが含まれる場合のみエラーメッセージを表示
-                // 必須クラスの場合は専用メッセージを表示
-                const message = hasRequiredClass ? messages.expectedRequired : messages.expected;
-                stylelint.utils.report({
-                  message: message,
-                  node: rule, // ルール全体にエラーを表示
-                  result,
-                  ruleName,
-                });
-              }
-            }
           }
         } else if (hasIsolationIsolate && hasOtherStackingContext) {
           // isolation: isolateが指定されているが、すでに他のプロパティによりスタッキングコンテキストが作成されている場合
@@ -556,6 +342,32 @@ const plugin = stylelint.createPlugin(
               ruleName,
             });
           }
+        } else if (hasPositionZIndex && !hasIsolationIsolate && !ignoreWhenStackingContextExists) {
+          // position + z-indexでスタッキングコンテキストを作成しているが、isolation: isolateがない場合
+          // かつignoreWhenStackingContextExistsオプションがfalseの場合
+
+          // 以前のルールではここで警告を出していたが、現在のルールでは出さない
+          // 無視すべきでないセレクタがある場合のみ警告
+          /*
+          const nonIgnoredSelectors = selectors.filter(selector => !shouldIgnoreSelector(selector));
+          if (nonIgnoredSelectors.length > 0) {
+            const firstPositionDecl = declMap.get(CSS.POSITION_KEY)[0].node;
+            stylelint.utils.report({
+              message: messages.expected,
+              node: firstPositionDecl,
+              result,
+              ruleName,
+            });
+          }
+          */
+        } else if (hasRequiredSelector && !hasIsolationIsolate) {
+          // isolation: isolateが必須なセレクタがあるが、isolation: isolateが指定されていない場合
+          stylelint.utils.report({
+            message: messages.expectedRequired,
+            node: rule,
+            result,
+            ruleName,
+          });
         }
       });
     };
@@ -566,4 +378,3 @@ plugin.ruleName = ruleName;
 plugin.messages = messages;
 
 export default plugin;
-
