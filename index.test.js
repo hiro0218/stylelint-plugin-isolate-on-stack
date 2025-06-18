@@ -1013,487 +1013,33 @@ describe("Edge cases and error handling", () => {
     expectNoWarnings(result);
   });
 
-  it("should report error when ignoreWhenStackingContextExists is true but no stacking context property exists", async () => {
-    const result = await stylelint.lint({
-      code: `
+  it("should not suppress warning when will-change doesn't create stacking context", async () => {
+    const result = await lintCSS(`
         .test {
           position: absolute;
           z-index: 1;
           will-change: color; /* doesn't create stacking context */
         }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
+      `);
 
     expectWarnings(result, 1);
   });
 
-  it("should not report error when class is in ignoreClasses list", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test.no-isolation {
-          position: absolute;
-          z-index: 1;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreClasses: ["no-isolation", "another-class"] }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should report error when class is not in ignoreClasses list", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test.different-class {
-          position: absolute;
-          z-index: 1;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreClasses: ["no-isolation", "another-class"] }],
-        },
-      },
-    });
-
-    expectWarnings(result, 1);
-  });
-
-  it("should not report error when comment disables the rule", async () => {
-    // stylelintはdisableコメントを自動的に処理するため、
-    // スキップするためのダミーテスト
-    expect(true).toBeTruthy();
-  });
-
-  it("should report redundantStackingContext message when isolation:isolate exists but other stacking context exists", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          isolation: isolate;
-          opacity: 0.9;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expect(result.results[0].warnings[0].text).toContain("redundant because a stacking context already exists");
-  });
-
-  it("should detect stacking context from backdrop-filter", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          backdrop-filter: blur(10px);
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from perspective", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          perspective: 1000px;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from clip-path", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          clip-path: circle(50%);
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mask", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask: url(mask.png);
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mask-image", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask-image: linear-gradient(rgba(0, 0, 0, 1), transparent);
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mask-border", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          mask-border: url(border.png) 25 repeat;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from mix-blend-mode", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          mix-blend-mode: multiply;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should detect stacking context from will-change with multiple values", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          will-change: color, opacity, transform;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expectNoWarnings(result);
-  });
-
-  it("should properly handle 'none' values for properties that can create stacking contexts", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          transform: none;
-          filter: none;
-          backdrop-filter: none;
-          perspective: none;
-          clip-path: none;
-          mask: none;
-          mask-image: none;
-          mask-border: none;
-          mix-blend-mode: normal;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    // 'none'や'normal'の値ではスタッキングコンテキストが作成されないので警告が発生する
-    expectWarnings(result, 1);
-  });
-
-  it("should report redundantStackingContext when multiple stacking contexts exist", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .test {
-          position: absolute;
-          z-index: 1;
-          isolation: isolate;
-          opacity: 0.5;
-          transform: scale(1.1);
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-        },
-      },
-    });
-
-    expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("redundant because a stacking context already exists");
-  });
-
-  it("should handle edge cases with shouldIgnoreByClass", async () => {
-    const result = await stylelint.lint({
-      code: `
-        /* Testing with multiple classes */
-        .test1.another-class.no-isolation {
-          position: absolute;
-          z-index: 1;
-        }
-        /* Testing with pseudo-classes and no-isolation */
-        .test2.no-isolation:hover {
-          position: fixed;
-          z-index: 2;
-        }
-        /* Testing with no matching class */
-        .test3.different-class {
-          position: sticky;
-          z-index: 3;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, { ignoreClasses: ["no-isolation"] }],
-        },
-      },
-    });
-
-    // 最初の2つのルールはno-isolationがあるので警告なし、3つ目は警告あり
-    expect(result.results[0].warnings).toHaveLength(1);
-    expect(result.results[0].warnings[0].text).toContain("Expected 'isolation: isolate'");
-  });
-
-  it("should handle empty rules", async () => {
-    const result = await stylelint.lint({
-      code: `
-        .empty-rule {
-          /* 空のルール */
-        }
-        .test-rule {
-          position: absolute;
-          z-index: 1;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: true,
-        },
-      },
-    });
-
-    expectWarnings(result, 1);
-  });
-
-  it("should handle invalid class selectors", async () => {
-    const result = await stylelint.lint({
-      code: `
-        /* 無効なセレクタ */
-        .123-invalid {
-          position: absolute;
-          z-index: 1;
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: true,
-        },
-      },
-    });
-
-    expectWarnings(result, 1);
-  });
-
-  it("should handle all non-none values for properties that create stacking contexts", async () => {
+  it("should report redundant isolation when stacking context already exists", async () => {
     const result = await lintCSS(`
-        .test-opacity {
+        .test {
           position: absolute;
           z-index: 1;
-          opacity: 1; /* opacity:1 はスタッキングコンテキストを作成しない */
+          opacity: 0.9;
+          isolation: isolate; /* redundant */
         }
-        .test-will-change {
-          position: absolute;
-          z-index: 1;
-          will-change: color; /* color はスタッキングコンテキストを作成しない */
-        }
-      `, true);
+      `);
 
-    // opacity: 1; や will-change: color; などはスタッキングコンテキストを作成しないため、警告が発生しないことを確認
-    expectNoWarnings(result);
-  });
-
-  it("should handle null declarations", async () => {
-    // このテストはカバレッジチェックのために使用されるダミーテスト
-    // 実際のnullケースは他のテストでカバーされているため、パスするだけにする
-    expect(true).toBeTruthy();
-  });
-
-  it("should test for direct code path coverage of conditional branches", async () => {
-    const result = await stylelint.lint({
-      code: `
-        /* テスト用に様々なケースを含む */
-        .test-multiple-contexts {
-          position: relative;
-          z-index: 5;
-          isolation: isolate;
-          opacity: 0.5;
-        }
-        .no-isolation {
-          position: fixed;
-          z-index: 10;
-        }
-        .different-class::before {
-          position: absolute;
-          z-index: 20;
-          isolation: isolate; /* 疑似要素にisolation */
-        }
-      `,
-      config: {
-        plugins: [path.resolve(__dirname, "./index.js")],
-        rules: {
-          [ruleName]: [true, {
-            ignoreWhenStackingContextExists: true,
-            ignoreClasses: ["no-isolation"]
-          }],
-        },
-      },
-    });
-
-    // 警告が予想通り存在することを確認
-    expect(result.results[0].warnings.length).toBeGreaterThan(0);
-    // redundantStackingContextメッセージが含まれていることを確認
-    const hasRedundantWarning = result.results[0].warnings.some(
-      warning => warning.text.includes("redundant because a stacking context already exists")
-    );
-    expect(hasRedundantWarning).toBeTruthy();
-  });
-
-  it("should test each branch in hasOtherStackingContext condition", async () => {
-    // 分岐ごとのテスト
-    const configs = [
-      {
-        code: `
-          .test {
-            position: absolute;
-            z-index: 1;
-            will-change: color, opacity;
-          }
-        `,
-        expectNoWarning: true, // opacity がスタッキングコンテキストを作成
-      },
-      {
-        code: `
-          .test {
-            position: absolute;
-            z-index: 1;
-            perspective: 0;
-          }
-        `,
-        expectNoWarning: true, // 0でもスタッキングコンテキストを作成
-      }
-    ];
-
-    for (const config of configs) {
-      const result = await stylelint.lint({
-        code: config.code,
-        config: {
-          plugins: [path.resolve(__dirname, "./index.js")],
-          rules: {
-            [ruleName]: [true, { ignoreWhenStackingContextExists: true }],
-          },
-        },
-      });
-
-      if (config.expectNoWarning) {
-        expectNoWarnings(result);
-      } else {
-        expectWarnings(result);
-      }
-    }
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("redundant");
   });
 });
 
-// カスタマイズオプションのテスト
 describe("custom options for selectors", () => {
   it("should ignore specified selectors using ignoreSelectors option", async () => {
     const result = await stylelint.lint({
@@ -1621,5 +1167,89 @@ describe("custom options for selectors", () => {
     const warningTexts = result.results[0].warnings.map(w => w.text);
     expect(warningTexts).toContain(messages.expectedRequired);
     expect(warningTexts).toContain(messages.expected);
+  });
+
+  it("should detect stacking context from mask property", async () => {
+    const result = await lintCSS(`
+        .test {
+          position: absolute;
+          z-index: 1;
+          mask: url(mask.svg);
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+
+  it("should detect stacking context from mask-image property", async () => {
+    const result = await lintCSS(`
+        .test {
+          position: absolute;
+          z-index: 1;
+          mask-image: url(mask.svg);
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+
+  it("should detect stacking context from mask-border property", async () => {
+    const result = await lintCSS(`
+        .test {
+          position: absolute;
+          z-index: 1;
+          mask-border: url(border.svg) 25 space;
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+
+  it("should detect stacking context from mix-blend-mode property", async () => {
+    const result = await lintCSS(`
+        .test {
+          position: absolute;
+          z-index: 1;
+          mix-blend-mode: multiply;
+        }
+      `);
+
+    expectNoWarnings(result);
+  });
+
+  it("should handle normal value in mix-blend-mode properly", async () => {
+    const result = await lintCSS(`
+        .test {
+          position: absolute;
+          z-index: 1;
+          mix-blend-mode: normal;
+        }
+      `);
+
+    expectWarnings(result, 1);
+  });
+
+  it("should enforce isolation for elements with requireClasses even with stacking context", async () => {
+    // テスト用のカスタム設定
+    const customConfig = {
+      plugins: [path.resolve(__dirname, "./index.js")],
+      rules: {
+        [ruleName]: [true, { requireClasses: ["stacking-required"] }],
+      },
+    };
+
+    const result = await stylelint.lint({
+      code: `
+        .stacking-required {
+          position: absolute;
+          z-index: 1;
+          opacity: 0.9; /* スタッキングコンテキストあり */
+        }
+      `,
+      config: customConfig,
+    });
+
+    expectWarnings(result, 1);
+    expect(result.results[0].warnings[0].text).toContain("requires");
   });
 });

@@ -9,6 +9,24 @@ A Stylelint plugin that enforces the use of `isolation: isolate` when using posi
 
 To prevent stacking context issues, it's recommended to specify `isolation: isolate` when using positioning properties and `z-index` together. This plugin detects missing settings and applies automatic fixes when needed.
 
+### Stacking Context Detection
+
+This plugin automatically detects the presence of other CSS properties that create stacking contexts, such as:
+
+- `opacity` values less than 1
+- `transform` (except `none`)
+- `filter` (except `none`)
+- `backdrop-filter` (except `none`)
+- `perspective` (except `none`)
+- `clip-path` (except `none`)
+- `mask` (except `none`)
+- `mask-image` (except `none`)
+- `mask-border` (except `none`)
+- `mix-blend-mode` (except `normal`)
+- `will-change` properties that would create stacking contexts
+
+When these properties are detected, the plugin automatically suppresses warnings about missing `isolation: isolate` since these properties already create a stacking context equivalent to using `isolation: isolate`.
+
 ## Installation
 
 ```bash
@@ -141,7 +159,6 @@ This plugin supports several configuration options to make it more flexible and 
     "isolate-on-stack/isolation-for-position-zindex": [
       true,
       {
-        "ignoreWhenStackingContextExists": true,
         "ignoreClasses": ["no-isolation", "stacking-context"],
         "ignoreSelectors": ["\\.header", "\\.banner"],
         "ignoreElements": ["header", "footer"],
@@ -149,31 +166,6 @@ This plugin supports several configuration options to make it more flexible and 
       }
     ]
   }
-}
-```
-
-#### `ignoreWhenStackingContextExists`
-
-When set to `true`, the plugin will check if other properties that create stacking contexts are present and will not report errors if they are. Properties that create stacking contexts include:
-
-- `opacity` (value less than 1)
-- `transform` (except `none`)
-- `filter` (except `none`)
-- `backdrop-filter` (except `none`)
-- `perspective` (except `none`)
-- `clip-path` (except `none`)
-- `mask` / `mask-image` / `mask-border` (except `none`)
-- `mix-blend-mode` (except `normal`)
-- `will-change` (containing properties that create stacking contexts)
-
-This is useful to avoid redundant `isolation: isolate` declarations when a stacking context is already being created by other properties.
-
-```css
-/* No error will be reported when ignoreWhenStackingContextExists is true */
-.element {
-  position: absolute;
-  z-index: 10;
-  opacity: 0.9; /* Already creates a stacking context */
 }
 ```
 

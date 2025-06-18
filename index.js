@@ -64,7 +64,7 @@ const plugin = stylelint.createPlugin(
       const willChangeStackingValues = CSS.WILL_CHANGE_STACKING_VALUES;
 
       // オプション設定
-      const ignoreWhenStackingContextExists = secondaryOptions?.ignoreWhenStackingContextExists || false;
+      // 注: ignoreWhenStackingContextExistsオプションは非推奨、現在は常にtrue扱い
       const ignoreClasses = Array.isArray(secondaryOptions?.ignoreClasses)
         ? secondaryOptions.ignoreClasses
         : [];
@@ -329,7 +329,8 @@ const plugin = stylelint.createPlugin(
         } else if ((hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) ||
           (hasRequiredClass && !hasIsolationIsolate)) {
           // すでに他のプロパティによりスタッキングコンテキストが作成されている場合は警告を出さない
-          if (ignoreWhenStackingContextExists && hasOtherStackingContext && !hasRequiredClass) {
+          // ignoreWhenStackingContextExistsオプションに関わらず、スタッキングコンテキストが存在する場合は警告を抑止
+          if (hasOtherStackingContext && !hasRequiredClass) {
             return;
           }
 
@@ -380,7 +381,7 @@ const plugin = stylelint.createPlugin(
               }
             }
           }
-        } else if (hasIsolationIsolate && hasOtherStackingContext && ignoreWhenStackingContextExists) {
+        } else if (hasIsolationIsolate && hasOtherStackingContext) {
           // isolation: isolateが指定されているが、すでに他のプロパティによりスタッキングコンテキストが作成されている場合
           const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
           if (isolationItem) {
