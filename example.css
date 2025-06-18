@@ -153,3 +153,57 @@
   background-color: green;
   z-index: 999; /* Very high value */
 }
+
+/* -----------------------------
+ * Advanced Stacking Context Examples
+ * ----------------------------- */
+
+/* No error when opacity creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-opacity {
+  position: absolute;
+  z-index: 10;
+  opacity: 0.9; /* Creates a stacking context */
+}
+
+/* No error when transform creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-transform {
+  position: relative;
+  z-index: 5;
+  transform: translateZ(0); /* Creates a stacking context */
+}
+
+/* No error when filter creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-filter {
+  position: fixed;
+  z-index: 100;
+  filter: blur(5px); /* Creates a stacking context */
+}
+
+/* No error when will-change creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-will-change {
+  position: sticky;
+  z-index: 50;
+  will-change: transform; /* Creates a stacking context */
+}
+
+/* Class-based ignoring (with ignoreClasses option) */
+.layout-component.no-isolation {
+  position: absolute;
+  z-index: 200;
+  /* No error with proper configuration */
+}
+
+/* Stylelint disable comment example */
+/* stylelint-disable-next-line isolate-on-stack/isolation-for-position-zindex */
+.disabled-by-comment {
+  position: relative;
+  z-index: 300;
+}
+
+/* Redundant isolation with existing stacking context */
+.redundant-isolation {
+  position: absolute;
+  z-index: 400;
+  isolation: isolate; /* Redundant with ignoreWhenStackingContextExists option */
+  opacity: 0.8; /* Already creates a stacking context */
+}

@@ -127,3 +127,80 @@ When a rule contains multiple `z-index` declarations (except `z-index: auto`), t
 ```
 
 When using the autofix feature, the plugin will add `isolation: isolate` after the last `z-index` declaration in the rule.
+
+## Advanced Options
+
+This plugin supports several configuration options to make it more flexible and avoid redundant warnings.
+
+### Secondary Options
+
+```json
+{
+  "plugins": ["stylelint-plugin-isolate-on-stack"],
+  "rules": {
+    "isolate-on-stack/isolation-for-position-zindex": [
+      true,
+      {
+        "ignoreWhenStackingContextExists": true,
+        "ignoreClasses": ["no-isolation", "stacking-context"]
+      }
+    ]
+  }
+}
+```
+
+#### `ignoreWhenStackingContextExists`
+
+When set to `true`, the plugin will check if other properties that create stacking contexts are present and will not report errors if they are. Properties that create stacking contexts include:
+
+- `opacity` (value less than 1)
+- `transform` (except `none`)
+- `filter` (except `none`)
+- `backdrop-filter` (except `none`)
+- `perspective` (except `none`)
+- `clip-path` (except `none`)
+- `mask` / `mask-image` / `mask-border` (except `none`)
+- `mix-blend-mode` (except `normal`)
+- `will-change` (containing properties that create stacking contexts)
+
+This is useful to avoid redundant `isolation: isolate` declarations when a stacking context is already being created by other properties.
+
+```css
+/* No error will be reported when ignoreWhenStackingContextExists is true */
+.element {
+  position: absolute;
+  z-index: 10;
+  opacity: 0.9; /* Already creates a stacking context */
+}
+```
+
+#### `ignoreClasses`
+
+An array of class names to ignore. When a selector contains any of these class names, the rule will not report errors for that selector.
+
+```css
+/* No error will be reported if 'no-isolation' is in ignoreClasses */
+.element.no-isolation {
+  position: fixed;
+  z-index: 100;
+}
+```
+
+### Disabling with Comments
+
+You can disable the rule for specific lines using standard Stylelint disable comments:
+
+```css
+/* stylelint-disable-next-line isolate-on-stack/isolation-for-position-zindex */
+.element {
+  position: absolute;
+  z-index: 5;
+}
+
+/* stylelint-disable isolate-on-stack/isolation-for-position-zindex */
+.element {
+  position: fixed;
+  z-index: 10;
+}
+/* stylelint-enable isolate-on-stack/isolation-for-position-zindex */
+```

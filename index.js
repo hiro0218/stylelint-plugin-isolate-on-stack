@@ -7,6 +7,8 @@ const messages = stylelint.utils.ruleMessages(ruleName, {
   fixed: "'isolation: isolate' was automatically added.",
   redundant:
     "'isolation: isolate' has no effect on pseudo-elements and should be removed.",
+  redundantStackingContext:
+    "'isolation: isolate' is redundant because a stacking context already exists due to other properties.",
 });
 
 const CSS = Object.freeze({
@@ -15,6 +17,33 @@ const CSS = Object.freeze({
   Z_INDEX_KEY: "z-index",
   ISOLATION_KEY: "isolation",
   ISOLATION_VALUE_ISOLATE: "isolate",
+  // スタッキングコンテキストを作成するプロパティ
+  STACKING_CONTEXT_PROPS: {
+    OPACITY: "opacity",
+    TRANSFORM: "transform",
+    FILTER: "filter",
+    BACKDROP_FILTER: "backdrop-filter",
+    PERSPECTIVE: "perspective",
+    CLIP_PATH: "clip-path",
+    MASK: "mask",
+    MASK_IMAGE: "mask-image",
+    MASK_BORDER: "mask-border",
+    MIX_BLEND_MODE: "mix-blend-mode",
+    WILL_CHANGE: "will-change",
+  },
+  // will-changeで指定された場合にスタッキングコンテキストを作成する値
+  WILL_CHANGE_STACKING_VALUES: [
+    "opacity",
+    "transform",
+    "filter",
+    "backdrop-filter",
+    "perspective",
+    "clip-path",
+    "mask",
+    "mask-image",
+    "mask-border",
+    "mix-blend-mode"
+  ],
 });
 
 // 疑似要素のパターン
@@ -29,6 +58,14 @@ const plugin = stylelint.createPlugin(
       const zIndexKey = CSS.Z_INDEX_KEY;
       const isolationKey = CSS.ISOLATION_KEY;
       const isolateValue = CSS.ISOLATION_VALUE_ISOLATE;
+      const stackingContextProps = CSS.STACKING_CONTEXT_PROPS;
+      const willChangeStackingValues = CSS.WILL_CHANGE_STACKING_VALUES;
+
+      // オプション設定
+      const ignoreWhenStackingContextExists = secondaryOptions?.ignoreWhenStackingContextExists || false;
+      const ignoreClasses = Array.isArray(secondaryOptions?.ignoreClasses)
+        ? secondaryOptions.ignoreClasses
+        : [];
 
       root.walkRules((rule) => {
         // ノードが存在しない場合はスキップ
@@ -41,9 +78,28 @@ const plugin = stylelint.createPlugin(
         // すべてのセレクタが疑似要素である場合はtrueになる
         const isAllPseudoElements = selectors.length > 0 && selectors.every(selector => selector.match(PSEUDO_ELEMENT_PATTERN));
 
+        // 無視すべきクラスが含まれているかチェック
+        const shouldIgnoreByClass = ignoreClasses.length > 0 && selectors.some(selector => {
+          return ignoreClasses.some(ignoreClass => {
+            // クラス名が含まれているかチェック
+            const classPattern = new RegExp(`\\.${ignoreClass}(\\s|$|:|::|\\.)`);
+            return classPattern.test(selector);
+          });
+        });
+
+        // 前後のコメントを検索してdisableコメントをチェック
+        // 注: Stylelintの標準機能がコメント無効化を処理するため、ここでは常にfalseになる
+        const hasDisableComment = false;
+
+        // 無視すべき場合はスキップ
+        if (shouldIgnoreByClass || hasDisableComment) {
+          return;
+        }
+
         let hasPositionStacking = false;
         let hasZIndex = false;
         let hasIsolationIsolate = false;
+        let hasOtherStackingContext = false;
         let lastZIndexDecl = null;
         let nonAutoZIndexItems = [];
 
@@ -57,7 +113,18 @@ const plugin = stylelint.createPlugin(
           if (
             prop === positionKey ||
             prop === zIndexKey ||
-            prop === isolationKey
+            prop === isolationKey ||
+            prop === stackingContextProps.OPACITY ||
+            prop === stackingContextProps.TRANSFORM ||
+            prop === stackingContextProps.FILTER ||
+            prop === stackingContextProps.BACKDROP_FILTER ||
+            prop === stackingContextProps.PERSPECTIVE ||
+            prop === stackingContextProps.CLIP_PATH ||
+            prop === stackingContextProps.MASK ||
+            prop === stackingContextProps.MASK_IMAGE ||
+            prop === stackingContextProps.MASK_BORDER ||
+            prop === stackingContextProps.MIX_BLEND_MODE ||
+            prop === stackingContextProps.WILL_CHANGE
           ) {
             if (!declMap.has(prop)) {
               declMap.set(prop, []);
@@ -102,6 +169,110 @@ const plugin = stylelint.createPlugin(
           }
         }
 
+        // スタッキングコンテキストを作成する他のプロパティの検証
+        if (declMap.has(stackingContextProps.OPACITY)) {
+          for (const item of declMap.get(stackingContextProps.OPACITY)) {
+            // opacityが1未満の場合はスタッキングコンテキスト
+            if (parseFloat(item.value) < 1) {
+              hasOtherStackingContext = true;
+              break;
+            }
+          }
+        }
+
+        // transformが指定されている場合
+        if (declMap.has(stackingContextProps.TRANSFORM) && declMap.get(stackingContextProps.TRANSFORM).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const transformItems = declMap.get(stackingContextProps.TRANSFORM);
+          if (transformItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // filterが指定されている場合
+        if (declMap.has(stackingContextProps.FILTER) && declMap.get(stackingContextProps.FILTER).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const filterItems = declMap.get(stackingContextProps.FILTER);
+          if (filterItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // backdrop-filterが指定されている場合
+        if (declMap.has(stackingContextProps.BACKDROP_FILTER) && declMap.get(stackingContextProps.BACKDROP_FILTER).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const backdropFilterItems = declMap.get(stackingContextProps.BACKDROP_FILTER);
+          if (backdropFilterItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // perspectiveが指定されている場合
+        if (declMap.has(stackingContextProps.PERSPECTIVE) && declMap.get(stackingContextProps.PERSPECTIVE).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const perspectiveItems = declMap.get(stackingContextProps.PERSPECTIVE);
+          if (perspectiveItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // clip-pathが指定されている場合
+        if (declMap.has(stackingContextProps.CLIP_PATH) && declMap.get(stackingContextProps.CLIP_PATH).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const clipPathItems = declMap.get(stackingContextProps.CLIP_PATH);
+          if (clipPathItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // maskが指定されている場合
+        if (declMap.has(stackingContextProps.MASK) && declMap.get(stackingContextProps.MASK).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const maskItems = declMap.get(stackingContextProps.MASK);
+          if (maskItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // mask-imageが指定されている場合
+        if (declMap.has(stackingContextProps.MASK_IMAGE) && declMap.get(stackingContextProps.MASK_IMAGE).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const maskImageItems = declMap.get(stackingContextProps.MASK_IMAGE);
+          if (maskImageItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // mask-borderが指定されている場合
+        if (declMap.has(stackingContextProps.MASK_BORDER) && declMap.get(stackingContextProps.MASK_BORDER).length > 0) {
+          // noneでなければスタッキングコンテキスト
+          const maskBorderItems = declMap.get(stackingContextProps.MASK_BORDER);
+          if (maskBorderItems.some(item => item.value !== "none")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // mix-blend-modeが指定されている場合
+        if (declMap.has(stackingContextProps.MIX_BLEND_MODE) && declMap.get(stackingContextProps.MIX_BLEND_MODE).length > 0) {
+          // normalでなければスタッキングコンテキスト
+          const mixBlendModeItems = declMap.get(stackingContextProps.MIX_BLEND_MODE);
+          if (mixBlendModeItems.some(item => item.value !== "normal")) {
+            hasOtherStackingContext = true;
+          }
+        }
+
+        // will-changeが指定されている場合
+        if (declMap.has(stackingContextProps.WILL_CHANGE) && declMap.get(stackingContextProps.WILL_CHANGE).length > 0) {
+          const willChangeItems = declMap.get(stackingContextProps.WILL_CHANGE);
+          // will-changeにスタッキングコンテキストを作成するプロパティが含まれていればtrue
+          if (willChangeItems.some(item => {
+            const values = item.value.split(',').map(v => v.trim());
+            return values.some(value => willChangeStackingValues.includes(value));
+          })) {
+            hasOtherStackingContext = true;
+          }
+        }
+
         // 条件判定と修正
         if (isAllPseudoElements && hasIsolationIsolate) {
           // すべてのセレクタが疑似要素であり、isolation: isolateが指定されている場合は警告を出す
@@ -116,6 +287,11 @@ const plugin = stylelint.createPlugin(
             });
           }
         } else if (hasPositionStacking && hasZIndex && !hasIsolationIsolate && !isAllPseudoElements) {
+          // すでに他のプロパティによりスタッキングコンテキストが作成されている場合は警告を出さない
+          if (ignoreWhenStackingContextExists && hasOtherStackingContext) {
+            return;
+          }
+
           // 疑似要素のみの場合（isAllPseudoElements=true）は何も警告を出さない
           if (context && context.fix && lastZIndexDecl) {
             // 自動修正を適用
@@ -158,6 +334,17 @@ const plugin = stylelint.createPlugin(
                 });
               }
             }
+          }
+        } else if (hasIsolationIsolate && hasOtherStackingContext && ignoreWhenStackingContextExists) {
+          // isolation: isolateが指定されているが、すでに他のプロパティによりスタッキングコンテキストが作成されている場合
+          const isolationItem = declMap.get(isolationKey).find(item => item.value === isolateValue);
+          if (isolationItem) {
+            stylelint.utils.report({
+              message: messages.redundantStackingContext,
+              node: isolationItem.node,
+              result,
+              ruleName,
+            });
           }
         }
       });
