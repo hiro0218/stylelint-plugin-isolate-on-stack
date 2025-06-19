@@ -1,0 +1,74 @@
+/**
+ * 型定義モジュール
+ */
+
+import type { Declaration, Rule as PostCSSRule } from "postcss";
+import type { Rule } from "stylelint";
+
+/**
+ * スタッキングコンテキストを生成するプロパティの型定義
+ */
+export const STACKING_CONTEXT_PROPERTIES = [
+  "position",
+  "opacity",
+  "transform",
+  "filter",
+  "isolation",
+  "mix-blend-mode",
+  "contain",
+  "will-change",
+  "perspective",
+  "clip-path",
+  "mask",
+  "mask-image",
+  "mask-border",
+  "z-index",
+] as const;
+
+export type StackingContextProperty =
+  (typeof STACKING_CONTEXT_PROPERTIES)[number];
+
+/**
+ * z-index関連プロパティの型定義
+ */
+export const Z_INDEX_PROPERTIES = ["z-index"] as const;
+export type ZIndexProperty = (typeof Z_INDEX_PROPERTIES)[number];
+
+/**
+ * プラグインのルールオプション型
+ */
+export interface RuleOptions {
+  severity?: "error" | "warning";
+  maxZIndex?: number;
+  allowedProperties?: string[];
+  ignoreSelectors?: string[];
+}
+
+/**
+ * レポート関数の型定義
+ */
+export interface ReportFunctionParams {
+  message: string;
+  node: PostCSSRule | Declaration;
+  result: any; // PostCSS Result
+  ruleName: string;
+}
+
+export type ReportFunction = (params: ReportFunctionParams) => void;
+
+/**
+ * ルールのメッセージタイプ
+ */
+export interface RuleMessages {
+  [key: string]: string;
+  expected: string;
+  rejected: string;
+}
+
+/**
+ * プラグインルールタイプ
+ */
+export interface PluginRule extends Rule<boolean | [boolean, RuleOptions]> {
+  ruleName: string;
+  messages: RuleMessages;
+}

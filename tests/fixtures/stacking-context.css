@@ -1,0 +1,72 @@
+/* スタッキングコンテキスト関連のCSSサンプル */
+
+/* 適切なisolation: isolateの使用例 */
+.component {
+  isolation: isolate;
+}
+
+.overlay {
+  position: relative;
+  isolation: isolate;
+}
+
+/* 冗長なisolation: isolateの使用例 */
+.redundant-position-z-index {
+  position: relative;
+  z-index: 1;
+  isolation: isolate; /* 冗長: position + z-index でスタッキングコンテキストが生成されている */
+}
+
+.redundant-opacity {
+  opacity: 0.8;
+  isolation: isolate; /* 冗長: opacityでスタッキングコンテキストが生成されている */
+}
+
+.redundant-transform {
+  transform: scale(1.1);
+  isolation: isolate; /* 冗長: transformでスタッキングコンテキストが生成されている */
+}
+
+/* 無効なisolation: isolateの使用例 */
+.invalid-background-blend {
+  background-blend-mode: multiply;
+  isolation: isolate; /* 無効: background-blend-modeには影響しない */
+}
+
+/* 副作用によるスタッキングコンテキスト生成の例 */
+.hacky-opacity {
+  opacity: 0.999; /* ほぼ透明でないがスタッキングコンテキストを生成 */
+}
+
+.hacky-transform {
+  transform: translateZ(0); /* ハック: スタッキングコンテキストを生成 */
+}
+
+.hacky-will-change {
+  will-change: opacity; /* パフォーマンスヒントだがスタッキングコンテキストを生成 */
+}
+
+/* 過度に高いz-index値の例 */
+.extreme-z-index {
+  position: relative;
+  z-index: 9999; /* 過度に高い値 */
+}
+
+.moderate-z-index {
+  position: relative;
+  z-index: 50; /* 適切な範囲内 */
+}
+
+/* 多数の子孫を持つ要素の例 */
+/* @descendants: 150 */
+.high-descendant-count {
+  isolation: isolate; /* パフォーマンスに影響する可能性 */
+}
+
+/* 適切なmix-blend-modeとisolation: isolateの使用例 */
+.parent {
+  isolation: isolate;
+}
+.parent .child {
+  mix-blend-mode: multiply; /* 親がisolation: isolateを持つため、ブレンドが親の中に制限される */
+}
