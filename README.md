@@ -3,15 +3,19 @@
 [![NPM version](https://img.shields.io/npm/v/stylelint-plugin-isolate-on-stack.svg)](https://www.npmjs.org/package/stylelint-plugin-isolate-on-stack)
 [![Build Status](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/workflows/CI/badge.svg)](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/actions)
 
-A Stylelint plugin that enforces the use of `isolation: isolate` when using positioning properties (`position: absolute`, `position: relative`, `position: fixed`, `position: sticky`) with `z-index`. This plugin also supports autofix functionality.
+A Stylelint plugin for optimal stacking context management. It validates the usage of `isolation: isolate` property by checking for redundant declarations and detecting cases where the property should be used with positioning and z-index values.
 
 ## Background
 
-To prevent stacking context issues, it's recommended to specify `isolation: isolate` when using positioning properties and `z-index` together. This plugin detects missing settings and applies automatic fixes when needed.
+To create proper stacking contexts in CSS, it's recommended to use `isolation: isolate` when applying positioning properties with z-index. This plugin helps enforce this practice by:
+
+1. Detecting redundant `isolation: isolate` declarations when other properties already create stacking contexts
+2. Warning about ineffective combinations like `isolation: isolate` with `background-blend-mode`
+3. Identifying cases where `isolation: isolate` is required based on your configuration
 
 ### Stacking Context Detection
 
-This plugin automatically detects the presence of other CSS properties that create stacking contexts, such as:
+This plugin automatically detects the presence of CSS properties that create stacking contexts, such as:
 
 - `opacity` values less than 1
 - `transform` (except `none`)
@@ -25,7 +29,7 @@ This plugin automatically detects the presence of other CSS properties that crea
 - `mix-blend-mode` (except `normal`)
 - `will-change` properties that would create stacking contexts
 
-When these properties are detected, the plugin automatically suppresses warnings about missing `isolation: isolate` since these properties already create a stacking context equivalent to using `isolation: isolate`.
+When these properties are detected, the plugin automatically identifies redundant `isolation: isolate` declarations since these properties already create their own stacking contexts.
 
 ## Installation
 
@@ -43,22 +47,24 @@ Add the following to your `.stylelintrc.json` file (or other Stylelint configura
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
-    "isolate-on-stack/isolation-for-position-zindex": true
+    "isolate-on-stack/no-redundant-declaration": true
   }
 }
 ```
 
 ### Rule Details
 
-This plugin reports an error when a positioning property and `z-index` (except `z-index: auto`) exist but `isolation: isolate` is not specified. The error will be attached directly to each `z-index` declaration node, making it clear which declarations need to be addressed.
+This plugin checks for the following issues:
 
-#### Autofix
+- **Redundant usage**: When `isolation: isolate` is specified but other properties already create a stacking context
+- **Ineffective combinations**: When `isolation: isolate` is used with `background-blend-mode` (which has no effect)
+- **Pseudo-element restrictions**: When `isolation: isolate` is used on pseudo-elements where it has no effect
+- **Required usage**: When a selector specified in `requireClasses` requires `isolation: isolate` but it's not present
 
-This rule supports automatic fixing. When running the `stylelint --fix` command, it will automatically add `isolation: isolate` immediately after the last non-auto `z-index` declaration in the rule.
-
-#### ✅ Correct Example
+#### ✅ Correct Examples
 
 ```css
+/* Proper use of isolation with positioning and z-index */
 .element {
   position: absolute;
   z-index: 10;
@@ -70,167 +76,209 @@ This rule supports automatic fixing. When running the `stylelint --fix` command,
   position: relative;
   z-index: auto;
 }
-```
 
-#### ❌ Incorrect Example
-
-```css
+/* No warning, a stacking context is already created by other properties */
 .element {
   position: absolute;
-  z-index: 10;
+  z-index: 5;
+  opacity: 0.9;
+}
+
+/* Proper use of isolation for mix-blend-mode scope control */
+.blend-container {
+  isolation: isolate;
+}
+.blend-container .blended {
+  mix-blend-mode: multiply;
 }
 ```
 
-#### Pseudo-Elements
-
-This rule handles pseudo-elements specially:
-
-1. When a pseudo-element uses positioning properties with `z-index`, the rule will not report any errors, as `isolation: isolate` has no effect on pseudo-elements and would be redundant.
-
-2. When a pseudo-element already includes `isolation: isolate`, the rule will report a warning indicating that this property has no effect on pseudo-elements and should be removed.
+#### ❌ Incorrect Examples
 
 ```css
-/* No error will be reported */
-.element::before {
+/* Redundant isolation: isolate with existing stacking context */
+.element {
   position: absolute;
-  z-index: 10;
+  z-index: 5;
+  opacity: 0.8; /* Already creates a stacking context */
+  isolation: isolate; /* Redundant */
 }
 
+/* Invalid combination with background-blend-mode */
+.element {
+  background-blend-mode: multiply;
+  isolation: isolate; /* Invalid: isolation doesn't affect background-blend-mode */
+}
+
+/* Ineffective on pseudo-elements */
+.element::after {
+  position: fixed;
+  z-index: 5;
+  isolation: isolate; /* No effect on pseudo-elements */
+}
+```
+
+### Pseudo-Element Handling
+
+The plugin handles pseudo-elements specially, recognizing that most pseudo-elements cannot have their own stacking contexts:
+
+```css
 /* Will report a warning to remove the redundant property */
 .element::after {
   position: fixed;
   z-index: 5;
-  isolation: isolate;
+  isolation: isolate; /* Will trigger a warning */
 }
 ```
 
-#### Mixed Selectors
+The plugin identifies these specific pseudo-elements where stacking contexts are allowed:
 
-When a rule contains both normal selectors and pseudo-element selectors, the plugin will still report errors for the normal selectors:
+- `::first-letter`
+- `::first-line`
+- `::marker`
 
-```css
-/* Will report an error for the normal selector */
-.element,
-.element::before {
-  position: absolute;
-  z-index: 10;
-}
-```
-
-The plugin distinguishes between rules containing:
-
-1. Only pseudo-elements - No warning about missing `isolation: isolate`, warns if it's present as redundant
-2. At least one normal element - Warning about missing `isolation: isolate` when position and z-index are present
-
-#### Multiple z-index Declarations
-
-When a rule contains multiple `z-index` declarations (except `z-index: auto`), the plugin will report errors for each non-auto declaration:
-
-```css
-/* Will report errors for both z-index declarations */
-.element {
-  position: absolute;
-  z-index: 1;
-  color: red;
-  z-index: 2;
-}
-
-/* Will report an error only for z-index: 5, but not for z-index: auto */
-.element {
-  position: relative;
-  z-index: auto;
-  margin: 10px;
-  z-index: 5;
-}
-```
-
-When using the autofix feature, the plugin will add `isolation: isolate` after the last `z-index` declaration in the rule.
+For other pseudo-elements, the plugin will warn about redundant `isolation: isolate` declarations.
 
 ## Advanced Options
 
-This plugin supports several configuration options to make it more flexible and avoid redundant warnings.
-
-### Secondary Options
+The plugin supports the following configuration options:
 
 ```json
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
-    "isolate-on-stack/isolation-for-position-zindex": [
+    "isolate-on-stack/no-redundant-declaration": [
       true,
       {
-        "ignoreClasses": ["no-isolation", "stacking-context"],
-        "ignoreSelectors": ["\\.header", "\\.banner"],
+        "ignoreWhenStackingContextExists": true,
+        "ignoreSelectors": ["^\\.ignore-"],
         "ignoreElements": ["header", "footer"],
-        "requireClasses": ["stacking-required"]
+        "ignoreClasses": ["no-isolate"],
+        "requireClasses": ["require-isolate"]
       }
     ]
   }
 }
 ```
 
-#### `ignoreClasses`
+### Configuration Options
 
-An array of class names to ignore. When a selector contains any of these class names, the rule will not report errors for that selector.
+- **ignoreWhenStackingContextExists**: When `true`, the plugin ignores checks when a stacking context already exists. Default is `false`.
 
-```css
-/* No error will be reported if 'no-isolation' is in ignoreClasses */
-.element.no-isolation {
-  position: fixed;
-  z-index: 100;
-}
-```
+- **ignoreSelectors**: An array of regex patterns. Selectors matching these patterns will be ignored.
 
-#### `ignoreSelectors`
+  ```css
+  /* No errors reported if "^\\.header" is in ignoreSelectors */
+  .header {
+    position: fixed;
+    z-index: 100;
+  }
+  ```
 
-An array of regular expression patterns. The rule will not be applied to selectors that match the specified patterns. This is useful for excluding specific selectors with finer granularity.
+- **ignoreElements**: An array of HTML element names to ignore.
 
-```css
-/* No error will be reported if '\.header' is in ignoreSelectors */
-.header {
-  position: fixed;
-  z-index: 100;
-}
-```
+  ```css
+  /* No errors reported if "header" is in ignoreElements */
+  header {
+    position: sticky;
+    z-index: 5;
+  }
+  ```
 
-#### `ignoreElements`
+- **ignoreClasses**: An array of class names to ignore.
 
-An array of HTML element names. The rule will not be applied to the specified elements. This is useful when you want to exclude specific HTML elements.
+  ```css
+  /* No errors reported if "no-isolate" is in ignoreClasses */
+  .element.no-isolate {
+    position: fixed;
+    z-index: 100;
+  }
+  ```
 
-```css
-/* No error will be reported if 'header' is in ignoreElements */
-header {
-  position: sticky;
-  z-index: 5;
-}
-```
+- **requireClasses**: An array of class names that always require `isolation: isolate`.
+  ```css
+  /* Error reported if "require-isolate" is in requireClasses and isolation is missing */
+  .require-isolate {
+    position: relative;
+    z-index: 5;
+  }
+  ```
 
-#### `requireClasses`
-
-An array of class names. Selectors containing the specified classes will always require `isolation: isolate`. This is useful when you want to enforce isolation for specific classes even without position properties or `z-index`.
-
-```css
-/* Error will be reported if 'stacking-required' is in requireClasses, even without position or z-index */
-.stacking-required {
-  color: blue;
-}
-```
-
-### Disabling with Comments
+### Disabling Rules
 
 You can disable the rule for specific lines using standard Stylelint disable comments:
 
 ```css
-/* stylelint-disable-next-line isolate-on-stack/isolation-for-position-zindex */
+/* stylelint-disable-next-line isolate-on-stack/no-redundant-declaration */
 .element {
   position: absolute;
   z-index: 5;
+  isolation: isolate; /* This would normally trigger a redundant warning */
 }
-
-/* stylelint-disable isolate-on-stack/isolation-for-position-zindex */
-.element {
-  position: fixed;
-  z-index: 10;
-}
-/* stylelint-enable isolate-on-stack/isolation-for-position-zindex */
 ```
+
+## Technical Implementation
+
+### Rule Messages
+
+The plugin provides the following messages:
+
+- **redundantStackingContext**: Warns when `isolation: isolate` is redundant because a stacking context already exists.
+- **ineffectiveOnBackgroundBlend**: Warns that `isolation: isolate` has no effect on `background-blend-mode`.
+- **redundant**: Warns when `isolation: isolate` has no effect on pseudo-elements.
+- **expectedRequired**: Warns when a selector requires `isolation: isolate` but it's not specified.
+
+### Stacking Context Detection
+
+The plugin detects properties that create stacking contexts:
+
+```javascript
+const CSS = {
+  POSITION_KEY: "position",
+  POSITION_STACKING_VALUES: ["absolute", "relative", "fixed", "sticky"],
+  Z_INDEX_KEY: "z-index",
+  ISOLATION_KEY: "isolation",
+  ISOLATION_VALUE_ISOLATE: "isolate",
+  STACKING_CONTEXT_PROPS: {
+    OPACITY: "opacity",
+    TRANSFORM: "transform",
+    FILTER: "filter",
+    BACKDROP_FILTER: "backdrop-filter",
+    PERSPECTIVE: "perspective",
+    CLIP_PATH: "clip-path",
+    MASK: "mask",
+    MASK_IMAGE: "mask-image",
+    MASK_BORDER: "mask-border",
+    MIX_BLEND_MODE: "mix-blend-mode",
+    BACKGROUND_BLEND_MODE: "background-blend-mode",
+    WILL_CHANGE: "will-change",
+  },
+};
+```
+
+### Pseudo-Element Detection
+
+The plugin uses the following patterns to detect pseudo-elements:
+
+```javascript
+// Pseudo-element pattern
+const PSEUDO_ELEMENT_PATTERN =
+  /(::|:)(before|after|first-letter|first-line|selection|backdrop|placeholder|marker|spelling-error|grammar-error)/;
+
+// Pseudo-elements where stacking contexts are allowed
+const STACKING_ALLOWED_PSEUDO_ELEMENTS = [
+  "first-letter",
+  "first-line",
+  "marker",
+];
+```
+
+The plugin validates CSS rules by checking:
+
+1. If selectors are pseudo-elements
+2. If `isolation: isolate` is present
+3. If other stacking context properties exist
+4. If there are any ineffective combinations
+5. If a selector requires `isolation: isolate`
+
+This helps maintain optimal and efficient CSS by preventing redundant or ineffective declarations.
