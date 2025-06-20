@@ -94,7 +94,8 @@ testRule({
     },
     {
       code: ".invalid { transform: translateX(10px); isolation: isolate; }",
-      description: "isolation: isolate is redundant when transform: translateX(10px) already creates a stacking context",
+      description:
+        "isolation: isolate is redundant when transform: translateX(10px) already creates a stacking context",
       message: noRedundantDeclarationMessages.rejected,
       line: 1,
       column: 45,

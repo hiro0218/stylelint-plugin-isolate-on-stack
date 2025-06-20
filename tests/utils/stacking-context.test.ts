@@ -1,5 +1,5 @@
 /**
- * スタッキングコンテキストユーティリティのテスト
+ * Tests for stacking context utilities
  */
 import { describe, it, expect } from "vitest";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../../src/utils/stacking-context";
 import { Declaration } from "postcss";
 
-// モックDeclarationの作成ヘルパー関数
+// Helper function to create mock Declaration
 function createMockDeclaration(prop: string, value: string): Declaration {
   return {
     prop,
@@ -24,86 +24,86 @@ function createMockDeclaration(prop: string, value: string): Declaration {
   } as unknown as Declaration;
 }
 
-describe("スタッキングコンテキストユーティリティ", () => {
+describe("Stacking Context Utilities", () => {
   describe("createsStackingContext", () => {
-    it("isolation: isolateの場合、trueを返す", () => {
+    it("should return true for isolation: isolate", () => {
       const decl = createMockDeclaration("isolation", "isolate");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("isolation: autoの場合、falseを返す", () => {
+    it("should return false for isolation: auto", () => {
       const decl = createMockDeclaration("isolation", "auto");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("opacity: 0.5の場合、trueを返す", () => {
+    it("should return true for opacity: 0.5", () => {
       const decl = createMockDeclaration("opacity", "0.5");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("opacity: 1の場合、falseを返す", () => {
+    it("should return false for opacity: 1", () => {
       const decl = createMockDeclaration("opacity", "1");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("transform: translateX(10px)の場合、trueを返す", () => {
+    it("should return true for transform: translateX(10px)", () => {
       const decl = createMockDeclaration("transform", "translateX(10px)");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("transform: noneの場合、falseを返す", () => {
+    it("should return false for transform: none", () => {
       const decl = createMockDeclaration("transform", "none");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("filter: blur(5px)の場合、trueを返す", () => {
+    it("should return true for filter: blur(5px)", () => {
       const decl = createMockDeclaration("filter", "blur(5px)");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("mix-blend-mode: multiply の場合、trueを返す", () => {
+    it("should return true for mix-blend-mode: multiply", () => {
       const decl = createMockDeclaration("mix-blend-mode", "multiply");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("mix-blend-mode: normal の場合、falseを返す", () => {
+    it("should return false for mix-blend-mode: normal", () => {
       const decl = createMockDeclaration("mix-blend-mode", "normal");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("contain: layout の場合、trueを返す", () => {
+    it("should return true for contain: layout", () => {
       const decl = createMockDeclaration("contain", "layout");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("contain: none の場合、falseを返す", () => {
+    it("should return false for contain: none", () => {
       const decl = createMockDeclaration("contain", "none");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("will-change: transform の場合、trueを返す", () => {
+    it("should return true for will-change: transform", () => {
       const decl = createMockDeclaration("will-change", "transform");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("will-change: transform, opacity の場合、trueを返す", () => {
+    it("should return true for will-change: transform, opacity", () => {
       const decl = createMockDeclaration("will-change", "transform, opacity");
       expect(createsStackingContext(decl)).toBe(true);
     });
 
-    it("will-change: color の場合、falseを返す", () => {
+    it("should return false for will-change: color", () => {
       const decl = createMockDeclaration("will-change", "color");
       expect(createsStackingContext(decl)).toBe(false);
     });
 
-    it("未定義のプロパティの場合、falseを返す", () => {
+    it("should return false for undefined properties", () => {
       const decl = createMockDeclaration("color", "red");
       expect(createsStackingContext(decl)).toBe(false);
     });
   });
 
   describe("hasPositionAndZIndexStackingContext", () => {
-    it("position: relative と z-index: 1 の組み合わせでtrueを返す", () => {
+    it("should return true for position: relative with z-index: 1", () => {
       expect(
         hasPositionAndZIndexStackingContext({
           position: "relative",
@@ -112,7 +112,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("position: static と z-index: 1 の組み合わせでfalseを返す", () => {
+    it("should return false for position: static with z-index: 1", () => {
       expect(
         hasPositionAndZIndexStackingContext({
           position: "static",
@@ -121,7 +121,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(false);
     });
 
-    it("position: relative と z-index: auto の組み合わせでfalseを返す", () => {
+    it("should return false for position: relative with z-index: auto", () => {
       expect(
         hasPositionAndZIndexStackingContext({
           position: "relative",
@@ -130,17 +130,17 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(false);
     });
 
-    it("positionプロパティがない場合はfalseを返す", () => {
+    it("should return false when position property is missing", () => {
       const result = hasPositionAndZIndexStackingContext({
         "z-index": "1",
       });
-      // 関数が明示的にfalseを返さない場合でも、falsy値ならテスト成功と見なす
+      // Test passes if the function returns a falsy value
       expect(!!result).toBe(false);
     });
   });
 
   describe("hasFlexOrGridItemZIndexStackingContext", () => {
-    it("親要素がflexでz-indexが1の場合、trueを返す", () => {
+    it("should return true for flex parent with z-index: 1", () => {
       expect(
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "flex",
@@ -149,7 +149,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("親要素がgridでz-indexが1の場合、trueを返す", () => {
+    it("should return true for grid parent with z-index: 1", () => {
       expect(
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "grid",
@@ -158,7 +158,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("親要素がflexでz-indexがautoの場合、falseを返す", () => {
+    it("should return false for flex parent with z-index: auto", () => {
       expect(
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "flex",
@@ -167,7 +167,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(false);
     });
 
-    it("親要素がblockの場合、falseを返す", () => {
+    it("should return false for block parent with z-index: 1", () => {
       expect(
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "block",
@@ -178,29 +178,29 @@ describe("スタッキングコンテキストユーティリティ", () => {
   });
 
   describe("getZIndexValue", () => {
-    it("z-index: 5 の場合、5を返す", () => {
+    it("should return 5 for z-index: 5", () => {
       const decl = createMockDeclaration("z-index", "5");
       expect(getZIndexValue(decl)).toBe(5);
     });
 
-    it("z-index: auto の場合、nullを返す", () => {
+    it("should return null for z-index: auto", () => {
       const decl = createMockDeclaration("z-index", "auto");
       expect(getZIndexValue(decl)).toBeNull();
     });
 
-    it("z-index: -10 の場合、-10を返す", () => {
+    it("should return -10 for z-index: -10", () => {
       const decl = createMockDeclaration("z-index", "-10");
       expect(getZIndexValue(decl)).toBe(-10);
     });
 
-    it("z-index以外のプロパティの場合、nullを返す", () => {
+    it("should return null for non-z-index properties", () => {
       const decl = createMockDeclaration("color", "red");
       expect(getZIndexValue(decl)).toBeNull();
     });
   });
 
   describe("hasInvalidBackgroundBlendWithIsolation", () => {
-    it("isolation: isolateとbackground-blend-mode: multiplyの組み合わせでtrueを返す", () => {
+    it("should return true for isolation: isolate with background-blend-mode: multiply", () => {
       expect(
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
@@ -209,7 +209,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("isolation: isolateとbackground-blend-mode: normalの組み合わせでfalseを返す", () => {
+    it("should return false for isolation: isolate with background-blend-mode: normal", () => {
       expect(
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
@@ -218,7 +218,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(false);
     });
 
-    it("isolation: autoとbackground-blend-mode: multiplyの組み合わせでfalseを返す", () => {
+    it("should return false for isolation: auto with background-blend-mode: multiply", () => {
       expect(
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "auto",
@@ -227,7 +227,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(false);
     });
 
-    it("background-blend-modeがない場合はfalseを返す", () => {
+    it("should return false when background-blend-mode is missing", () => {
       expect(
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
@@ -237,7 +237,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
   });
 
   describe("alreadyCreatesStackingContext", () => {
-    it("positionとz-indexによるスタッキングコンテキストの場合、trueを返す", () => {
+    it("should return true for stacking context created by position and z-index", () => {
       expect(
         alreadyCreatesStackingContext({
           position: "relative",
@@ -246,7 +246,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("opacity: 0.5の場合、trueを返す", () => {
+    it("should return true for opacity: 0.5", () => {
       expect(
         alreadyCreatesStackingContext({
           opacity: "0.5",
@@ -254,7 +254,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("transform: translateX(10px)の場合、trueを返す", () => {
+    it("should return true for transform: translateX(10px)", () => {
       expect(
         alreadyCreatesStackingContext({
           transform: "translateX(10px)",
@@ -262,7 +262,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("filter: blur(5px)の場合、trueを返す", () => {
+    it("should return true for filter: blur(5px)", () => {
       expect(
         alreadyCreatesStackingContext({
           filter: "blur(5px)",
@@ -270,7 +270,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("backdrop-filter: blur(5px)の場合、trueを返す", () => {
+    it("should return true for backdrop-filter: blur(5px)", () => {
       expect(
         alreadyCreatesStackingContext({
           "backdrop-filter": "blur(5px)",
@@ -278,7 +278,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("mix-blend-mode: multiplyの場合、trueを返す", () => {
+    it("should return true for mix-blend-mode: multiply", () => {
       expect(
         alreadyCreatesStackingContext({
           "mix-blend-mode": "multiply",
@@ -286,7 +286,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("perspective: 1000pxの場合、trueを返す", () => {
+    it("should return true for perspective: 1000px", () => {
       expect(
         alreadyCreatesStackingContext({
           perspective: "1000px",
@@ -294,7 +294,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("clip-path: circle(50%)の場合、trueを返す", () => {
+    it("should return true for clip-path: circle(50%)", () => {
       expect(
         alreadyCreatesStackingContext({
           "clip-path": "circle(50%)",
@@ -302,7 +302,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("mask: url(#mask)の場合、trueを返す", () => {
+    it("should return true for mask: url(#mask)", () => {
       expect(
         alreadyCreatesStackingContext({
           mask: "url(#mask)",
@@ -310,7 +310,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("mask-image: url(mask.png)の場合、trueを返す", () => {
+    it("should return true for mask-image: url(mask.png)", () => {
       expect(
         alreadyCreatesStackingContext({
           "mask-image": "url(mask.png)",
@@ -318,7 +318,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("mask-border: url(border.png)の場合、trueを返す", () => {
+    it("should return true for mask-border: url(border.png)", () => {
       expect(
         alreadyCreatesStackingContext({
           "mask-border": "url(border.png)",
@@ -326,7 +326,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("contain: layoutの場合、trueを返す", () => {
+    it("should return true for contain: layout", () => {
       expect(
         alreadyCreatesStackingContext({
           contain: "layout",
@@ -334,7 +334,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("contain: paint strictの場合、trueを返す", () => {
+    it("should return true for contain: paint strict", () => {
       expect(
         alreadyCreatesStackingContext({
           contain: "paint strict",
@@ -342,7 +342,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("will-change: transformの場合、trueを返す", () => {
+    it("should return true for will-change: transform", () => {
       expect(
         alreadyCreatesStackingContext({
           "will-change": "transform",
@@ -350,7 +350,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("will-change: opacity, z-indexの場合、trueを返す", () => {
+    it("should return true for will-change: opacity, z-index", () => {
       expect(
         alreadyCreatesStackingContext({
           "will-change": "opacity, z-index",
@@ -358,7 +358,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       ).toBe(true);
     });
 
-    it("スタッキングコンテキストを生成しないプロパティのみの場合、falseを返す", () => {
+    it("should return false for properties that don't create stacking contexts", () => {
       expect(
         alreadyCreatesStackingContext({
           color: "red",
@@ -369,5 +369,5 @@ describe("スタッキングコンテキストユーティリティ", () => {
     });
   });
 
-  // その他の関数のテストも必要に応じて追加
+  // Add more tests for other functions as needed
 });
