@@ -5,7 +5,6 @@
  * 特定の閾値を超える場合に警告を出す
  */
 import { Declaration, Root, Rule as PostCSSRule } from "postcss";
-import type { Rule } from "stylelint";
 import { alreadyCreatesStackingContext } from "../../utils/stacking-context.js";
 import { performanceHighDescendantCountMessages } from "../../utils/message.js";
 

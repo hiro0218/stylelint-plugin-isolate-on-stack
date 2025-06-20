@@ -6,7 +6,7 @@
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
-import { hasInvalidBackgroundBlendWithIsolation, collectElementProperties } from "../../utils/stacking-context.js";
+import { collectElementProperties } from "../../utils/stacking-context.js";
 import { ineffectiveOnBackgroundBlendMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
