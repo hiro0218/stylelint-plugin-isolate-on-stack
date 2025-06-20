@@ -3,177 +3,183 @@
 [![NPM version](https://img.shields.io/npm/v/stylelint-plugin-isolate-on-stack.svg)](https://www.npmjs.org/package/stylelint-plugin-isolate-on-stack)
 [![Build Status](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/workflows/CI/badge.svg)](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/actions)
 
-スタッキングコンテキスト関連の問題を検出・防止するStylelintプラグインです。このプラグインは、`z-index`の使用や積み重ねコンテキストの生成に関するベストプラクティスを強制し、CSSの品質向上を目指します。
+A Stylelint plugin that detects and prevents stacking context-related issues. This plugin enforces best practices for `z-index` usage and stacking context generation, aiming to improve CSS quality.
 
-## 概要
+## Overview
 
-このプラグインは、以下の目的で設計されています：
+This plugin is designed for the following purposes:
 
-- 冗長または無効な`isolation: isolate`の使用を検出
-- 過度に高い`z-index`値を警告
-- スタッキングコンテキスト生成に関するベストプラクティスを強制
-- CSS宣言がスタッキングコンテキストに与える影響を理解するのを支援
+- Detect redundant or invalid uses of `isolation: isolate`
+- Warn against excessively high `z-index` values
+- Enforce best practices for stacking context generation
+- Help understand how CSS declarations affect stacking contexts
 
-## スタッキングコンテキストの検出
+## Stacking Context Detection
 
-以下のCSSプロパティがスタッキングコンテキストを生成する条件を自動的に検出します：
+This plugin automatically detects conditions where CSS properties generate stacking contexts:
 
-- `position: relative/absolute/fixed/sticky` + `z-index`が`auto`以外
-- `opacity`が1未満
-- `transform`が`none`以外
-- `filter`が`none`以外
-- `backdrop-filter`が`none`以外
-- `mix-blend-mode`が`normal`以外
+- `position: relative/absolute/fixed/sticky` + `z-index` other than `auto`
+- `opacity` less than 1
+- `transform` other than `none`
+- `filter` other than `none`
+- `backdrop-filter` other than `none`
+- `mix-blend-mode` other than `normal`
 - `isolation: isolate`
 - `contain: layout/paint/strict/content`
-- `perspective`が`none`以外
-- `clip-path`が`none`以外
-- `mask` / `mask-image` / `mask-border`が`none`以外
-- スタッキングコンテキストを生成するプロパティを指定した`will-change`
+- `perspective` other than `none`
+- `clip-path` other than `none`
+- `mask` / `mask-image` / `mask-border` other than `none`
+- `will-change` with properties that generate stacking contexts
 
-これらのプロパティが検出された場合、プラグインは冗長な`isolation: isolate`宣言を識別し、適切な修正を促します。
+When these properties are detected, the plugin identifies redundant `isolation: isolate` declarations and encourages appropriate corrections.
 
-## インストール
+## Installation
 
-以下のコマンドでインストールできます：
+Install with the following command:
 
 ```bash
 npm install --save-dev stylelint-plugin-isolate-on-stack
 ```
 
-## 使用方法
+## Usage
 
-### 設定
+### Configuration
 
-`.stylelintrc.json`ファイルに以下を追加してください：
+Add the following to your `.stylelintrc.json` file:
 
 ```json
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
-    // スタッキングコンテキスト関連のルールを有効化
+    // Enable stacking context related rules
     "stylelint-plugin-isolate-on-stack/no-redundant-declaration": true,
-    // 無効な背景ブレンドモードとの組み合わせを検出
+    // Detect invalid combinations with background blend modes
     "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
-    // 過度に高いz-index値を警告
-    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
-    // 副作用のあるプロパティの使用を避け、明示的なisolationを推奨
+    // Warn against excessively high z-index values
+    "stylelint-plugin-isolate-on-stack/z-index-range": [
+      true,
+      { "maxZIndex": 100 }
+    ],
+    // Encourage explicit isolation over properties with side effects
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
-    // 高い子孫要素数を持つスタッキングコンテキストを警告
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }]
+    // Warn about stacking contexts with high descendant counts
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
+      true,
+      { "maxDescendantCount": 50 }
+    ]
   }
 }
 ```
 
-## ルール
+## Rules
 
 ### no-redundant-declaration
 
-他のプロパティによって既にスタッキングコンテキストが生成されている場合に、冗長な`isolation: isolate`宣言を検出します。
+Detects redundant `isolation: isolate` declarations when stacking contexts are already created by other properties.
 
-**不適切な例：**
+**Incorrect example:**
 
 ```css
 .redundant {
   position: relative;
   z-index: 1;
-  isolation: isolate; /* 冗長: position + z-index でスタッキングコンテキストが生成されている */
+  isolation: isolate; /* Redundant: position + z-index already creates a stacking context */
 }
 ```
 
-**適切な例：**
+**Correct example:**
 
 ```css
 .not-redundant {
-  isolation: isolate; /* OK: 他のプロパティでスタッキングコンテキストが生成されていない */
+  isolation: isolate; /* OK: No other properties are creating a stacking context */
 }
 ```
 
 ### ineffective-on-background-blend
 
-`background-blend-mode`と`isolation: isolate`の無効な組み合わせを検出します。`isolation: isolate`は`background-blend-mode`の動作に影響を与えません。
+Detects invalid combinations of `background-blend-mode` and `isolation: isolate`. `isolation: isolate` does not affect the behavior of `background-blend-mode`.
 
-**不適切な例：**
+**Incorrect example:**
 
 ```css
 .invalid {
   background-blend-mode: multiply;
-  isolation: isolate; /* 無効: background-blend-modeには影響しない */
+  isolation: isolate; /* Invalid: does not affect background-blend-mode */
 }
 ```
 
-**適切な例：**
+**Correct example:**
 
 ```css
 .valid {
   isolation: isolate;
-  mix-blend-mode: multiply; /* OK: mix-blend-modeはisolationの影響を受ける */
+  mix-blend-mode: multiply; /* OK: mix-blend-mode is affected by isolation */
 }
 ```
 
 ### z-index-range
 
-過度に高い`z-index`値を検出します。デフォルトでは100を超える値が警告されます。
+Detects excessively high `z-index` values. By default, values exceeding 100 will trigger a warning.
 
-**不適切な例：**
+**Incorrect example:**
 
 ```css
 .too-high {
-  z-index: 9999; /* 過度に高い値 */
+  z-index: 9999; /* Excessively high value */
 }
 ```
 
-**適切な例：**
+**Correct example:**
 
 ```css
 .reasonable {
-  z-index: 10; /* 適切な範囲内 */
+  z-index: 10; /* Within reasonable range */
 }
 ```
 
 ### prefer-over-side-effects
 
-スタッキングコンテキストの生成のみを目的として副作用のあるプロパティを使用している場合に、より明示的な`isolation: isolate`の使用を推奨します。
+Encourages the use of explicit `isolation: isolate` over properties with side effects when the sole purpose is to create a stacking context.
 
-**不適切な例：**
+**Incorrect example:**
 
 ```css
 .hacky {
-  opacity: 0.999; /* ほぼ透明でないがスタッキングコンテキストを生成する目的で使用 */
+  opacity: 0.999; /* Almost not transparent but used to create a stacking context */
 }
 
 .hacky-transform {
-  transform: translateZ(0); /* スタッキングコンテキスト生成のためのハック */
+  transform: translateZ(0); /* Hack to create a stacking context */
 }
 ```
 
-**適切な例：**
+**Correct example:**
 
 ```css
 .explicit {
-  isolation: isolate; /* 明示的にスタッキングコンテキストを生成 */
+  isolation: isolate; /* Explicitly creates a stacking context */
 }
 ```
 
 ### performance-high-descendant-count
 
-スタッキングコンテキストを生成する要素が多数の子孫要素を持つ場合に警告します。多数の子孫要素を持つスタッキングコンテキストはブラウザのレンダリングパフォーマンスに影響を与える可能性があります。
+Warns when elements creating stacking contexts contain a high number of descendant elements. Stacking contexts with many descendants can impact browser rendering performance.
 
-**不適切な例：**
+**Incorrect example:**
 
 ```css
 .complex-stacking-context {
   position: relative;
   z-index: 1;
-  /* この要素が100を超える子孫要素を持つ場合に警告 */
+  /* This will trigger a warning if the element has more than 100 descendants */
 }
 ```
 
-**適切な例：**
+**Correct example:**
 
 ```css
 .optimized-structure {
-  /* 子孫要素数が制限内に収まるよう、DOM構造を最適化 */
+  /* Optimize DOM structure to keep descendant count within limits */
   isolation: isolate;
 }
 ```
