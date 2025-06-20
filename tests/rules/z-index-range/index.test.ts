@@ -1,5 +1,6 @@
 import { testRule } from "../../utils/custom-test-rule";
 import rule from "../../../src/rules/z-index-range/index";
+import { zIndexRangeMessages } from "../../../src/utils/message";
 
 const { ruleName } = rule;
 
@@ -35,24 +36,21 @@ testRule({
     {
       code: ".invalid { z-index: 101; }",
       description: "最大許容値を超えるz-index値",
-      message:
-        "z-index値 101 が最大許容値 100 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
+      message: zIndexRangeMessages.rejected(101, 100),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 999; }",
       description: "著しく高いz-index値",
-      message:
-        "z-index値 999 が最大許容値 100 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
+      message: zIndexRangeMessages.rejected(999, 100),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 99999; }",
       description: "極端に高いz-index値",
-      message:
-        "z-index値 99999 が最大許容値 100 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
+      message: zIndexRangeMessages.rejected(99999, 100),
       line: 1,
       column: 11,
     },
@@ -80,16 +78,14 @@ testRule({
     {
       code: ".invalid { z-index: 11; }",
       description: "カスタム最大値を超えるz-index値",
-      message:
-        "z-index値 11 が最大許容値 10 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
+      message: zIndexRangeMessages.rejected(11, 10),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 100; }",
       description: "デフォルト最大値は許容されるがカスタム最大値では許容されないz-index値",
-      message:
-        "z-index値 100 が最大許容値 10 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
+      message: zIndexRangeMessages.rejected(100, 10),
       line: 1,
       column: 11,
     },

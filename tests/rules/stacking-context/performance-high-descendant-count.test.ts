@@ -1,5 +1,6 @@
 import { testRule } from "../../utils/custom-test-rule";
 import rule from "../../../src/rules/stacking-context/performance-high-descendant-count";
+import { performanceHighDescendantCountMessages } from "../../../src/utils/message";
 
 const { ruleName } = rule;
 
@@ -19,8 +20,7 @@ testRule({
     {
       code: "/* @descendants: 150 */ .invalid { isolation: isolate; }",
       description: "isolation: isolateの使用が閾値を超える場合",
-      message:
-        "多数の子孫（0個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: 100個",
+      message: performanceHighDescendantCountMessages.rejected,
       line: 1,
       column: 42,
     },
@@ -48,16 +48,14 @@ testRule({
     {
       code: "/* @descendants: 201 */ .invalid { isolation: isolate; }",
       description: "カスタム閾値を超える子孫数を持つ要素にisolation: isolateを使用",
-      message:
-        "多数の子孫（0個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: 200個",
+      message: performanceHighDescendantCountMessages.rejected,
       line: 1,
       column: 42,
     },
     {
       code: "/* @descendants: 500 */ .invalid { isolation: isolate; }",
       description: "カスタム閾値を大幅に超える子孫数を持つ要素にisolation: isolateを使用",
-      message:
-        "多数の子孫（0個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: 200個",
+      message: performanceHighDescendantCountMessages.rejected,
       line: 1,
       column: 42,
     },

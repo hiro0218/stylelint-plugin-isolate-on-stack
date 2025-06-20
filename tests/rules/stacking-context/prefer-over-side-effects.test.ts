@@ -1,5 +1,6 @@
 import { testRule } from "../../utils/custom-test-rule";
 import rule from "../../../src/rules/stacking-context/prefer-over-side-effects";
+import { preferOverSideEffectsMessages } from "../../../src/utils/message";
 
 const { ruleName } = rule;
 
@@ -35,48 +36,42 @@ testRule({
     {
       code: ".invalid { opacity: 0.999; }",
       description: "ほぼ透明ではないopacityの値でスタッキングコンテキストを生成",
-      message:
-        "opacity: 0.999の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { transform: translateZ(0); }",
       description: "transformハックでのスタッキングコンテキスト生成",
-      message:
-        "transform: translateZ(0)の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { transform: translate3d(0,0,0); }",
       description: "transform 3Dハックでのスタッキングコンテキスト生成",
-      message:
-        "transform: translate3d(0,0,0)の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { will-change: opacity; }",
       description: "opacityに対するwill-changeの使用",
-      message:
-        "will-change: opacityの意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { will-change: transform; }",
       description: "transformに対するwill-changeの使用",
-      message:
-        "will-change: transformの意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { will-change: z-index; }",
       description: "z-indexに対するwill-changeの使用",
-      message:
-        "will-change: z-indexの意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
+      message: preferOverSideEffectsMessages.rejected,
       line: 1,
       column: 11,
     },

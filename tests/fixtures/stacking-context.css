@@ -58,7 +58,6 @@
 }
 
 /* 多数の子孫を持つ要素の例 */
-/* @descendants: 150 */
 .high-descendant-count {
   isolation: isolate; /* パフォーマンスに影響する可能性 */
 }

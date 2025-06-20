@@ -1,5 +1,6 @@
 import { testRule } from "../../utils/custom-test-rule";
 import rule from "../../../src/rules/stacking-context/ineffective-on-background-blend";
+import { ineffectiveOnBackgroundBlendMessages } from "../../../src/utils/message";
 
 const { ruleName } = rule;
 
@@ -31,24 +32,21 @@ testRule({
     {
       code: ".invalid { background-blend-mode: multiply; isolation: isolate; }",
       description: "background-blend-modeにisolation: isolateが効果がない",
-      message:
-        "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
+      message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 46,
     },
     {
       code: ".invalid { background-blend-mode: screen; isolation: isolate; }",
       description: "background-blend-mode: screenにisolation: isolateが効果がない",
-      message:
-        "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
+      message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 44,
     },
     {
       code: ".invalid { background-blend-mode: overlay; isolation: isolate; }",
       description: "background-blend-mode: overlayにisolation: isolateが効果がない",
-      message:
-        "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
+      message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 45,
     },
