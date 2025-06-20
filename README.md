@@ -65,7 +65,7 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
     // 高い子孫要素数を持つスタッキングコンテキストを警告
     "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
       true,
-      { "maxDescendantCount": 100 }
+      { "maxDescendantCount": 50 }
     ]
   }
 }

@@ -62,10 +62,39 @@
   isolation: isolate; /* パフォーマンスに影響する可能性 */
 }
 
+/* 多数の子孫要素を持つスタッキングコンテキストの例 */
+.many-descendants {
+  isolation: isolate; /* パフォーマンスに影響する可能性 */
+}
+
+/* ワイルドカードセレクタでスタッキングコンテキストを生成（パフォーマンス低下の懸念） */
+.general-container * {
+  position: relative;
+  z-index: 1; /* 多数の要素にスタッキングコンテキストを生成する可能性 */
+}
+
+/* 長い子孫セレクタチェーンでスタッキングコンテキスト（パフォーマンス低下の懸念） */
+header nav ul li a {
+  opacity: 0.9; /* 長いセレクタチェーンの末尾でスタッキングコンテキストを生成 */
+}
+
+/* IDセレクタによる具体的なスタッキングコンテキスト（パフォーマンス問題の可能性低） */
+#specific-element {
+  isolation: isolate; /* IDセレクタは単一要素を指すため、パフォーマンス問題の可能性が低い */
+}
+
 /* 適切なmix-blend-modeとisolation: isolateの使用例 */
 .parent {
   isolation: isolate;
 }
 .parent .child {
+  mix-blend-mode: multiply; /* 親がisolation: isolateを持つため、ブレンドが親の中に制限される */
+}
+
+.parent-with-isolation {
+  isolation: isolate;
+}
+
+.child-with-blend {
   mix-blend-mode: multiply; /* 親がisolation: isolateを持つため、ブレンドが親の中に制限される */
 }

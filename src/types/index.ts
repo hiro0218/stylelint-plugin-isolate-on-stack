@@ -36,6 +36,7 @@ export type StackingContextProperty = (typeof STACKING_CONTEXT_PROPERTIES)[numbe
 export interface RuleOptions {
   severity?: "error" | "warning";
   maxZIndex?: number;
+  maxDescendantCount?: number;
   allowedProperties?: string[];
   ignoreSelectors?: string[];
 }
