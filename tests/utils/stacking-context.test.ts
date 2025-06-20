@@ -108,7 +108,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasPositionAndZIndexStackingContext({
           position: "relative",
           "z-index": "1",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -117,7 +117,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasPositionAndZIndexStackingContext({
           position: "static",
           "z-index": "1",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -126,7 +126,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasPositionAndZIndexStackingContext({
           position: "relative",
           "z-index": "auto",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -145,7 +145,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "flex",
           "z-index": "1",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -154,7 +154,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "grid",
           "z-index": "1",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -163,7 +163,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "flex",
           "z-index": "auto",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -172,7 +172,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasFlexOrGridItemZIndexStackingContext({
           parentDisplay: "block",
           "z-index": "1",
-        })
+        }),
       ).toBe(false);
     });
   });
@@ -205,7 +205,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
           "background-blend-mode": "multiply",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -214,7 +214,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
           "background-blend-mode": "normal",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -223,7 +223,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "auto",
           "background-blend-mode": "multiply",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -231,7 +231,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         hasInvalidBackgroundBlendWithIsolation({
           isolation: "isolate",
-        })
+        }),
       ).toBe(false);
     });
   });
@@ -242,7 +242,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
         alreadyCreatesStackingContext({
           position: "relative",
           "z-index": "1",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -250,7 +250,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           opacity: "0.5",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -258,7 +258,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           transform: "translateX(10px)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -266,7 +266,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           filter: "blur(5px)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -274,7 +274,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "backdrop-filter": "blur(5px)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -282,7 +282,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "mix-blend-mode": "multiply",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -290,7 +290,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           perspective: "1000px",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -298,7 +298,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "clip-path": "circle(50%)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -306,7 +306,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           mask: "url(#mask)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -314,7 +314,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "mask-image": "url(mask.png)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -322,7 +322,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "mask-border": "url(border.png)",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -330,7 +330,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           contain: "layout",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -338,7 +338,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           contain: "paint strict",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -346,7 +346,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "will-change": "transform",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -354,7 +354,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
       expect(
         alreadyCreatesStackingContext({
           "will-change": "opacity, z-index",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -364,7 +364,7 @@ describe("スタッキングコンテキストユーティリティ", () => {
           color: "red",
           margin: "10px",
           padding: "20px",
-        })
+        }),
       ).toBe(false);
     });
   });

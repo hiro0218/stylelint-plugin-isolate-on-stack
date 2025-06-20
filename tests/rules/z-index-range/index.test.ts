@@ -87,8 +87,7 @@ testRule({
     },
     {
       code: ".invalid { z-index: 100; }",
-      description:
-        "デフォルト最大値は許容されるがカスタム最大値では許容されないz-index値",
+      description: "デフォルト最大値は許容されるがカスタム最大値では許容されないz-index値",
       message:
         "z-index値 100 が最大許容値 10 を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。",
       line: 1,

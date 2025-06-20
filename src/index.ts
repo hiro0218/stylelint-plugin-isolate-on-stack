@@ -33,10 +33,7 @@ const performanceHighDescendantCount = stylelint.createPlugin(
   performanceHighDescendantCountRule,
 );
 
-const zIndexRange = stylelint.createPlugin(
-  `${namespace}/z-index-range`,
-  zIndexRangeRule,
-);
+const zIndexRange = stylelint.createPlugin(`${namespace}/z-index-range`, zIndexRangeRule);
 
 // Stylelint v16 ESM形式に対応したプラグイン配列
 const plugins = [

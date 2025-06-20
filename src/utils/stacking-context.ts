@@ -31,19 +31,12 @@ export function createsStackingContext(decl: Declaration): boolean {
     case "mix-blend-mode": // normal以外の混合モードでスタッキングコンテキストを生成
       return value !== "normal";
     case "contain": // 特定のcontain値でスタッキングコンテキストを生成
-      return (
-        value === "layout" ||
-        value === "paint" ||
-        value === "strict" ||
-        value === "content"
-      );
-    case "will-change": { // 特定のプロパティを指定したwill-changeでスタッキングコンテキスト生成
+      return value === "layout" || value === "paint" || value === "strict" || value === "content";
+    case "will-change": {
+      // 特定のプロパティを指定したwill-changeでスタッキングコンテキスト生成
       const willChangeValues = value.split(",").map((v) => v.trim());
       return willChangeValues.some(
-        (v) =>
-          STACKING_CONTEXT_PROPERTIES.includes(v as any) ||
-          v === "opacity" ||
-          v === "transform",
+        (v) => STACKING_CONTEXT_PROPERTIES.includes(v as any) || v === "opacity" || v === "transform",
       );
     }
     default:
@@ -57,9 +50,7 @@ export function createsStackingContext(decl: Declaration): boolean {
  * @param element - CSSプロパティを含むオブジェクト
  * @returns スタッキングコンテキストを生成する場合はtrue
  */
-export function hasPositionAndZIndexStackingContext(
-  element: Record<string, any>,
-): boolean {
+export function hasPositionAndZIndexStackingContext(element: Record<string, any>): boolean {
   // static以外のposition値と、auto以外のz-indexの組み合わせでスタッキングコンテキスト生成
   return (
     element.position &&
@@ -75,9 +66,7 @@ export function hasPositionAndZIndexStackingContext(
  * @param element - CSSプロパティを含むオブジェクト
  * @returns スタッキングコンテキストを生成する場合はtrue
  */
-export function hasFlexOrGridItemZIndexStackingContext(
-  element: Record<string, any>,
-): boolean {
+export function hasFlexOrGridItemZIndexStackingContext(element: Record<string, any>): boolean {
   // flexまたはgridコンテナ内の子要素でauto以外のz-indexを持つとスタッキングコンテキスト生成
   const parentDisplay = element.parentDisplay || "";
   return (
@@ -110,9 +99,7 @@ export function getZIndexValue(decl: Declaration): number | null {
  * @param element - CSSプロパティを含むオブジェクト
  * @returns 無効な組み合わせの場合はtrue
  */
-export function hasInvalidBackgroundBlendWithIsolation(
-  element: Record<string, any>,
-): boolean {
+export function hasInvalidBackgroundBlendWithIsolation(element: Record<string, any>): boolean {
   return (
     element.isolation === "isolate" &&
     element["background-blend-mode"] !== undefined &&
@@ -126,45 +113,27 @@ export function hasInvalidBackgroundBlendWithIsolation(
  * @param element - CSSプロパティを含むオブジェクト
  * @returns 既にスタッキングコンテキストを生成する場合はtrue
  */
-export function alreadyCreatesStackingContext(
-  element: Record<string, any>,
-): boolean {
+export function alreadyCreatesStackingContext(element: Record<string, any>): boolean {
   // positionとz-indexの組み合わせによるスタッキングコンテキスト
   if (hasPositionAndZIndexStackingContext(element)) return true;
   // flexまたはgridアイテムのz-indexによるスタッキングコンテキスト
   if (hasFlexOrGridItemZIndexStackingContext(element)) return true;
 
   // 他の様々なスタッキングコンテキスト生成プロパティをチェック
-  if (element.opacity !== undefined && parseFloat(element.opacity) < 1)
-    return true;
-  if (element.transform !== undefined && element.transform !== "none")
-    return true;
+  if (element.opacity !== undefined && parseFloat(element.opacity) < 1) return true;
+  if (element.transform !== undefined && element.transform !== "none") return true;
   if (element.filter !== undefined && element.filter !== "none") return true;
-  if (
-    element["backdrop-filter"] !== undefined &&
-    element["backdrop-filter"] !== "none"
-  )
-    return true;
-  if (
-    element["mix-blend-mode"] !== undefined &&
-    element["mix-blend-mode"] !== "normal"
-  )
-    return true;
-  if (element.perspective !== undefined && element.perspective !== "none")
-    return true;
-  if (element["clip-path"] !== undefined && element["clip-path"] !== "none")
-    return true;
+  if (element["backdrop-filter"] !== undefined && element["backdrop-filter"] !== "none") return true;
+  if (element["mix-blend-mode"] !== undefined && element["mix-blend-mode"] !== "normal") return true;
+  if (element.perspective !== undefined && element.perspective !== "none") return true;
+  if (element["clip-path"] !== undefined && element["clip-path"] !== "none") return true;
   if (element.mask !== undefined && element.mask !== "none") return true;
-  if (element["mask-image"] !== undefined && element["mask-image"] !== "none")
-    return true;
-  if (element["mask-border"] !== undefined && element["mask-border"] !== "none")
-    return true;
+  if (element["mask-image"] !== undefined && element["mask-image"] !== "none") return true;
+  if (element["mask-border"] !== undefined && element["mask-border"] !== "none") return true;
 
   // containプロパティによるスタッキングコンテキスト
   if (element.contain !== undefined) {
-    const containValues = element.contain
-      .split(" ")
-      .map((v: string) => v.trim());
+    const containValues = element.contain.split(" ").map((v: string) => v.trim());
     if (
       containValues.includes("layout") ||
       containValues.includes("paint") ||
@@ -177,15 +146,10 @@ export function alreadyCreatesStackingContext(
 
   // will-changeプロパティによるスタッキングコンテキスト
   if (element["will-change"] !== undefined) {
-    const willChangeValues = element["will-change"]
-      .split(",")
-      .map((v: string) => v.trim());
+    const willChangeValues = element["will-change"].split(",").map((v: string) => v.trim());
     if (
       willChangeValues.some(
-        (v: string) =>
-          STACKING_CONTEXT_PROPERTIES.includes(v as any) ||
-          v === "opacity" ||
-          v === "transform",
+        (v: string) => STACKING_CONTEXT_PROPERTIES.includes(v as any) || v === "opacity" || v === "transform",
       )
     ) {
       return true;

@@ -39,14 +39,7 @@ interface TestRuleOptions {
  * ルールのテストを実行する関数
  */
 export function testRule(options: TestRuleOptions): void {
-  const {
-    ruleName,
-    config,
-    plugins = [],
-    accept = [],
-    reject = [],
-    customSyntax,
-  } = options;
+  const { ruleName, config, plugins = [], accept = [], reject = [], customSyntax } = options;
 
   // プロジェクトのルートディレクトリ
   const rootDir = process.cwd();
@@ -82,9 +75,7 @@ export function testRule(options: TestRuleOptions): void {
               config: {
                 // プラグインパスを絶対パスで指定
                 plugins: resolvedPlugins.map((plugin) =>
-                  path.isAbsolute(plugin)
-                    ? plugin
-                    : path.resolve(rootDir, plugin),
+                  path.isAbsolute(plugin) ? plugin : path.resolve(rootDir, plugin),
                 ),
                 rules: {
                   [ruleName]: config,
@@ -116,9 +107,7 @@ export function testRule(options: TestRuleOptions): void {
               configBasedir: rootDir,
               config: {
                 plugins: resolvedPlugins.map((plugin) =>
-                  path.isAbsolute(plugin)
-                    ? plugin
-                    : path.resolve(rootDir, plugin),
+                  path.isAbsolute(plugin) ? plugin : path.resolve(rootDir, plugin),
                 ),
                 rules: {
                   [ruleName]: config,
@@ -137,9 +126,7 @@ export function testRule(options: TestRuleOptions): void {
             if (message) {
               // 警告がない場合のテストケースに対応
               if (result.results[0].warnings.length > 0) {
-                const expectedMessage = Array.isArray(message)
-                  ? message[0]
-                  : message;
+                const expectedMessage = Array.isArray(message) ? message[0] : message;
                 expect(result.results[0].warnings[0].text).toBe(expectedMessage);
               }
             }

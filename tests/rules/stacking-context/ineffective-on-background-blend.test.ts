@@ -23,8 +23,7 @@ testRule({
     },
     {
       code: ".valid { background-blend-mode: normal; isolation: isolate; }",
-      description:
-        "background-blend-mode: normalは特別な効果がないため問題なし",
+      description: "background-blend-mode: normalは特別な効果がないため問題なし",
     },
   ],
 
@@ -39,8 +38,7 @@ testRule({
     },
     {
       code: ".invalid { background-blend-mode: screen; isolation: isolate; }",
-      description:
-        "background-blend-mode: screenにisolation: isolateが効果がない",
+      description: "background-blend-mode: screenにisolation: isolateが効果がない",
       message:
         "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
       line: 1,
@@ -48,8 +46,7 @@ testRule({
     },
     {
       code: ".invalid { background-blend-mode: overlay; isolation: isolate; }",
-      description:
-        "background-blend-mode: overlayにisolation: isolateが効果がない",
+      description: "background-blend-mode: overlayにisolation: isolateが効果がない",
       message:
         "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
       line: 1,

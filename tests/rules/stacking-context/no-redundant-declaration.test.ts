@@ -90,8 +90,7 @@ testRule({
     },
     {
       code: ".invalid { opacity: 0.5; isolation: isolate; }",
-      description:
-        "opacity: 0.5はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "opacity: 0.5はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のopacity: 0.5プロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -99,8 +98,7 @@ testRule({
     },
     {
       code: ".invalid { transform: translateX(10px); isolation: isolate; }",
-      description:
-        "transform: translateX(10px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "transform: translateX(10px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のtransform: translateX(10px)プロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -108,8 +106,7 @@ testRule({
     },
     {
       code: ".invalid { filter: blur(5px); isolation: isolate; }",
-      description:
-        "filter: blur(5px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "filter: blur(5px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のfilter: blur(5px)プロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -117,8 +114,7 @@ testRule({
     },
     {
       code: ".invalid { mix-blend-mode: multiply; isolation: isolate; }",
-      description:
-        "mix-blend-mode: multiplyはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "mix-blend-mode: multiplyはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のmix-blend-mode: multiplyプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -126,8 +122,7 @@ testRule({
     },
     {
       code: ".invalid { contain: layout; isolation: isolate; }",
-      description:
-        "contain: layoutはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "contain: layoutはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のcontain: layoutプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -135,8 +130,7 @@ testRule({
     },
     {
       code: ".invalid { will-change: opacity; isolation: isolate; }",
-      description:
-        "will-change: opacityはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "will-change: opacityはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素のwill-change: opacityプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -144,8 +138,7 @@ testRule({
     },
     {
       code: ".invalid { backdrop-filter: blur(5px); isolation: isolate; }",
-      description:
-        "backdrop-filter: blur(5px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "backdrop-filter: blur(5px)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素の他のプロパティプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -153,8 +146,7 @@ testRule({
     },
     {
       code: ".invalid { clip-path: circle(50%); isolation: isolate; }",
-      description:
-        "clip-path: circle(50%)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "clip-path: circle(50%)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素の他のプロパティプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -162,8 +154,7 @@ testRule({
     },
     {
       code: ".invalid { mask: url(#mask); isolation: isolate; }",
-      description:
-        "mask: url(#mask)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "mask: url(#mask)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素の他のプロパティプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -171,8 +162,7 @@ testRule({
     },
     {
       code: ".invalid { mask-image: url(mask.png); isolation: isolate; }",
-      description:
-        "mask-image: url(mask.png)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "mask-image: url(mask.png)はスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素の他のプロパティプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,
@@ -180,8 +170,7 @@ testRule({
     },
     {
       code: ".invalid { perspective: 1000px; isolation: isolate; }",
-      description:
-        "perspective: 1000pxはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
+      description: "perspective: 1000pxはスタッキングコンテキストを生成するのでisolation: isolateは冗長",
       message:
         "冗長なisolation: isolateです。この要素の他のプロパティプロパティが既に新しいスタッキングコンテキストを生成しています。",
       line: 1,

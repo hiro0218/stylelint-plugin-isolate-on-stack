@@ -49,15 +49,9 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
   "rules": {
     "stylelint-plugin-isolate-on-stack/no-redundant-declaration": true,
     "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
-    "stylelint-plugin-isolate-on-stack/z-index-range": [
-      true,
-      { "maxZIndex": 100 }
-    ],
+    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
-      true,
-      { "maxDescendantCount": 100 }
-    ]
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 100 }]
   }
 }
 ```

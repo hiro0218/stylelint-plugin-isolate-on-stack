@@ -8,12 +8,10 @@ import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { alreadyCreatesStackingContext } from "../../utils/stacking-context.js";
 
-const ruleName =
-  "stylelint-plugin-isolate-on-stack/no-redundant-declaration";
+const ruleName = "stylelint-plugin-isolate-on-stack/no-redundant-declaration";
 
 const messages = {
-  rejected:
-    "冗長なisolation: isolateです。他のスタッキングコンテキスト作成プロパティが存在しない場合は不要です。",
+  rejected: "冗長なisolation: isolateです。他のスタッキングコンテキスト作成プロパティが存在しない場合は不要です。",
 };
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
@@ -39,41 +37,24 @@ const rule: Rule = (primary, secondaryOptions) => {
       const properties = elementProperties[selector] || {};
 
       // isolation: isolateを持ち、他のプロパティで既にスタッキングコンテキストを生成している場合
-      if (
-        properties.isolation === "isolate" &&
-        alreadyCreatesStackingContext(properties)
-      ) {
+      if (properties.isolation === "isolate" && alreadyCreatesStackingContext(properties)) {
         // スタッキングコンテキストを生成している他のプロパティを特定
         let triggeringProperty = "";
 
         if (
           properties.position &&
-          ["relative", "absolute", "fixed", "sticky"].includes(
-            properties.position,
-          ) &&
+          ["relative", "absolute", "fixed", "sticky"].includes(properties.position) &&
           properties["z-index"] !== undefined &&
           properties["z-index"] !== "auto"
         ) {
           triggeringProperty = `position: ${properties.position}と併用されているz-index: ${properties["z-index"]}`;
-        } else if (
-          properties.opacity !== undefined &&
-          parseFloat(properties.opacity) < 1
-        ) {
+        } else if (properties.opacity !== undefined && parseFloat(properties.opacity) < 1) {
           triggeringProperty = `opacity: ${properties.opacity}`;
-        } else if (
-          properties.transform !== undefined &&
-          properties.transform !== "none"
-        ) {
+        } else if (properties.transform !== undefined && properties.transform !== "none") {
           triggeringProperty = `transform: ${properties.transform}`;
-        } else if (
-          properties.filter !== undefined &&
-          properties.filter !== "none"
-        ) {
+        } else if (properties.filter !== undefined && properties.filter !== "none") {
           triggeringProperty = `filter: ${properties.filter}`;
-        } else if (
-          properties["mix-blend-mode"] !== undefined &&
-          properties["mix-blend-mode"] !== "normal"
-        ) {
+        } else if (properties["mix-blend-mode"] !== undefined && properties["mix-blend-mode"] !== "normal") {
           triggeringProperty = `mix-blend-mode: ${properties["mix-blend-mode"]}`;
         } else if (properties.contain !== undefined) {
           triggeringProperty = `contain: ${properties.contain}`;

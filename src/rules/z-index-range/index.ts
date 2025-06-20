@@ -9,26 +9,19 @@ import { Declaration } from "postcss";
 import { getZIndexValue } from "../../utils/stacking-context.js";
 import type { RuleOptions } from "../../types/index.js";
 
-const ruleName =
-  "stylelint-plugin-isolate-on-stack/z-index-range";
+const ruleName = "stylelint-plugin-isolate-on-stack/z-index-range";
 
 const messages = {
   rejected: (zIndexValue: number, maxZIndex: number) =>
     `z-index値「${zIndexValue}」は許容範囲（最大: ${maxZIndex}）を超えています。`,
 };
-const rule: Rule<boolean | [boolean, RuleOptions]> = (
-  primary,
-  secondaryOptions,
-) => {
+const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
     // オプション設定を取得（デフォルト値はz-index最大値100）
-    const options =
-      Array.isArray(primary) && primary.length > 1 && primary[1]
-        ? primary[1]
-        : secondaryOptions || {};
+    const options = Array.isArray(primary) && primary.length > 1 && primary[1] ? primary[1] : secondaryOptions || {};
     const maxZIndex = options.maxZIndex !== undefined ? options.maxZIndex : 100;
 
     // z-index宣言をチェック

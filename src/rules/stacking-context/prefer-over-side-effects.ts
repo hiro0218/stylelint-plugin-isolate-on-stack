@@ -8,8 +8,7 @@
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 
-const ruleName =
-  "stylelint-plugin-isolate-on-stack/prefer-over-side-effects";
+const ruleName = "stylelint-plugin-isolate-on-stack/prefer-over-side-effects";
 
 const messages = {
   rejected:
@@ -25,11 +24,7 @@ const rule: Rule = (primary, secondaryOptions) => {
       const { prop, value } = decl;
 
       // 不透明度が極めて1に近い値を使ったハック
-      if (
-        prop === "opacity" &&
-        parseFloat(value) >= 0.99 &&
-        parseFloat(value) < 1
-      ) {
+      if (prop === "opacity" && parseFloat(value) >= 0.99 && parseFloat(value) < 1) {
         report({
           message: messages.rejected,
           node: decl,
@@ -56,9 +51,7 @@ const rule: Rule = (primary, secondaryOptions) => {
       // will-changeを使ったパフォーマンスヒント兼スタッキングコンテキスト生成
       if (
         prop === "will-change" &&
-        (value.includes("opacity") ||
-          value.includes("transform") ||
-          value.includes("z-index"))
+        (value.includes("opacity") || value.includes("transform") || value.includes("z-index"))
       ) {
         report({
           message: messages.rejected,

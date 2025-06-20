@@ -8,8 +8,7 @@ import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { hasInvalidBackgroundBlendWithIsolation } from "../../utils/stacking-context.js";
 
-const ruleName =
-  "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
+const ruleName = "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
 
 const messages = {
   rejected:

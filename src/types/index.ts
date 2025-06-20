@@ -25,8 +25,7 @@ export const STACKING_CONTEXT_PROPERTIES = [
   "z-index",
 ] as const;
 
-export type StackingContextProperty =
-  (typeof STACKING_CONTEXT_PROPERTIES)[number];
+export type StackingContextProperty = (typeof STACKING_CONTEXT_PROPERTIES)[number];
 
 /**
  * プラグインルールのオプション設定

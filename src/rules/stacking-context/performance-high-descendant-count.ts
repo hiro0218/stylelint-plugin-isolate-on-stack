@@ -8,30 +8,20 @@ import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import type { RuleOptions } from "../../types/index.js";
 
-const ruleName =
-  "stylelint-plugin-isolate-on-stack/performance-high-descendant-count";
+const ruleName = "stylelint-plugin-isolate-on-stack/performance-high-descendant-count";
 
 const messages = {
   rejected:
     "isolation: isolateによるスタッキングコンテキストは、子孫要素が多い場合パフォーマンスに悪影響を与える可能性があります。",
 };
-const rule: Rule<boolean | [boolean, RuleOptions]> = (
-  primary,
-  secondaryOptions,
-) => {
+const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
     // オプション設定を取得（デフォルト値は子孫要素数の閾値100）
-    const options =
-      Array.isArray(primary) && primary.length > 1 && primary[1]
-        ? primary[1]
-        : secondaryOptions || {};
-    const threshold =
-      options.maxDescendantCount !== undefined
-        ? options.maxDescendantCount
-        : 100;
+    const options = Array.isArray(primary) && primary.length > 1 && primary[1] ? primary[1] : secondaryOptions || {};
+    const threshold = options.maxDescendantCount !== undefined ? options.maxDescendantCount : 100;
 
     // isolation: isolate宣言を持つルールを検索
     root.walkRules((rule) => {

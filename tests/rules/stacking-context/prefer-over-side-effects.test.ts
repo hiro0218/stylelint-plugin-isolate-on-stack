@@ -34,8 +34,7 @@ testRule({
   reject: [
     {
       code: ".invalid { opacity: 0.999; }",
-      description:
-        "ほぼ透明ではないopacityの値でスタッキングコンテキストを生成",
+      description: "ほぼ透明ではないopacityの値でスタッキングコンテキストを生成",
       message:
         "opacity: 0.999の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。",
       line: 1,
