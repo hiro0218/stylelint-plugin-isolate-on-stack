@@ -1,5 +1,8 @@
 /**
- * 過度に高いz-index値を検出するルール
+ * 過度に高いz-index値を検出して警告するルール
+ *
+ * z-indexの値が設定された閾値を超える場合に警告し、
+ * スタッキングコンテキストを適切に使用したレイヤー設計を促す
  */
 import { Rule } from "stylelint";
 import { Declaration } from "postcss";
@@ -12,10 +15,6 @@ export const messages = {
   rejected: (value: number, max: number) =>
     `z-index値 ${value} が最大許容値 ${max} を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。`,
 };
-
-/**
- * 過度に高いz-index値を検出するルール
- */
 const rule: Rule<boolean | [boolean, RuleOptions]> = (
   primary,
   secondaryOptions,
@@ -24,12 +23,12 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // セカンダリオプションを取得
+    // オプション設定を取得（デフォルト値はz-index最大値100）
     const options =
       Array.isArray(primary) && primary.length > 1 && primary[1]
         ? primary[1]
         : secondaryOptions || {};
-    const maxZIndex = options.maxZIndex !== undefined ? options.maxZIndex : 100; // デフォルト値は100
+    const maxZIndex = options.maxZIndex !== undefined ? options.maxZIndex : 100;
 
     // z-index宣言をチェック
     root.walkDecls("z-index", (decl) => {

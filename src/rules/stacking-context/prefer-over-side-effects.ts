@@ -1,6 +1,9 @@
 /**
- * 副作用のあるプロパティを使ってスタッキングコンテキストを生成している場合、
- * より明示的なisolation: isolateの使用を推奨するルール
+ * 副作用を利用したスタッキングコンテキスト生成の代わりに
+ * isolation: isolateの使用を推奨するルール
+ *
+ * opacity: 0.999やtransform: translateZ(0)などのハックを使ったスタッキングコンテキストの
+ * 生成よりも、明示的なisolation: isolateを使用することを推奨
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
@@ -12,21 +15,16 @@ export const messages = {
   rejected: (property: string, value: string) =>
     `${property}: ${value}の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。`,
 };
-
-/**
- * 副作用のあるプロパティを使ってスタッキングコンテキストを生成している場合、
- * より明示的なisolation: isolateの使用を推奨するルール
- */
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // 副作用を使ったスタッキングコンテキスト生成の可能性があるパターンをチェック
+    // 副作用を利用したスタッキングコンテキスト生成パターンをチェック
     root.walkDecls((decl) => {
       const { prop, value } = decl;
 
-      // opacity: 0.999などの、ほぼ透明ではない値
+      // 不透明度が極めて1に近い値を使ったハック
       if (
         prop === "opacity" &&
         parseFloat(value) >= 0.99 &&
@@ -40,7 +38,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         });
       }
 
-      // transform: translateZ(0)やtransform: translate3d(0,0,0)などのハックチェック
+      // 3D変換ハック（スタッキングコンテキスト生成目的）
       if (
         prop === "transform" &&
         (value === "translateZ(0)" ||
@@ -55,7 +53,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         });
       }
 
-      // will-change: opacity, transform などのパフォーマンスヒントを使った場合
+      // will-changeを使ったパフォーマンスヒント兼スタッキングコンテキスト生成
       if (
         prop === "will-change" &&
         (value.includes("opacity") ||

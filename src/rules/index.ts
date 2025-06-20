@@ -1,5 +1,5 @@
 /**
- * スタッキングコンテキスト関連ルールのエクスポート
+ * スタッキングコンテキストとz-indexに関連する全ルールのエクスポート
  */
 import noRedundantDeclaration from "./stacking-context/no-redundant-declaration.js";
 import ineffectiveOnBackgroundBlend from "./stacking-context/ineffective-on-background-blend.js";

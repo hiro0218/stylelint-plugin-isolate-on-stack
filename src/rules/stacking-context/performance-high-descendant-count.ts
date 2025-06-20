@@ -1,6 +1,8 @@
 /**
- * パフォーマンスに影響を与える可能性のある多数の子孫を持つ要素に
- * isolation: isolateを使用している場合の警告ルール
+ * 多数の子孫要素を持つ場合のisolation: isolateのパフォーマンス警告ルール
+ *
+ * 子孫要素が多い場合、isolation: isolateによる新しいスタッキングコンテキストは
+ * レンダリングパフォーマンスに影響を与える可能性があるため警告する
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
@@ -13,11 +15,6 @@ export const messages = {
   rejected: (count: number, threshold: number) =>
     `多数の子孫（${count}個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: ${threshold}個`,
 };
-
-/**
- * パフォーマンスに影響を与える可能性のある多数の子孫を持つ要素に
- * isolation: isolateを使用している場合の警告ルール
- */
 const rule: Rule<boolean | [boolean, RuleOptions]> = (
   primary,
   secondaryOptions,
@@ -26,7 +23,7 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // セカンダリオプションを取得
+    // オプション設定を取得（デフォルト値は子孫要素数の閾値100）
     const options =
       Array.isArray(primary) && primary.length > 1 && primary[1]
         ? primary[1]
@@ -34,7 +31,7 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
     const threshold =
       options.maxDescendantCount !== undefined
         ? options.maxDescendantCount
-        : 100; // デフォルト値は100
+        : 100;
 
     // isolation: isolate宣言を持つルールを検索
     root.walkRules((rule) => {

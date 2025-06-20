@@ -1,23 +1,23 @@
 /**
- * スタッキングコンテキスト関連のユーティリティ関数
+ * スタッキングコンテキストの検出と分析のためのユーティリティ関数
  */
 import type { Declaration } from "postcss";
 import { STACKING_CONTEXT_PROPERTIES } from "../types/index.js";
 
 /**
- * スタッキングコンテキストを生成する条件をチェックする
+ * CSS宣言がスタッキングコンテキストを生成するか判定
  *
- * @param decl - チェック対象のCSS宣言
- * @returns スタッキングコンテキストを生成するかどうか
+ * @param decl - 検査対象のCSS宣言
+ * @returns スタッキングコンテキストを生成する場合はtrue
  */
 export function createsStackingContext(decl: Declaration): boolean {
   const { prop, value } = decl;
 
-  // 直接的にスタッキングコンテキストを生成するプロパティ
+  // プロパティごとにスタッキングコンテキスト生成条件を確認
   switch (prop) {
-    case "isolation":
+    case "isolation": // isolation: isolateは明示的にスタッキングコンテキストを生成
       return value === "isolate";
-    case "opacity":
+    case "opacity": // 1未満の不透明度はスタッキングコンテキストを生成
       return parseFloat(value) < 1;
     case "transform":
     case "filter":
@@ -26,19 +26,18 @@ export function createsStackingContext(decl: Declaration): boolean {
     case "clip-path":
     case "mask":
     case "mask-image":
-    case "mask-border":
+    case "mask-border": // これらはnone以外の値でスタッキングコンテキストを生成
       return value !== "none";
-    case "mix-blend-mode":
+    case "mix-blend-mode": // normal以外の混合モードでスタッキングコンテキストを生成
       return value !== "normal";
-    case "contain":
+    case "contain": // 特定のcontain値でスタッキングコンテキストを生成
       return (
         value === "layout" ||
         value === "paint" ||
         value === "strict" ||
         value === "content"
       );
-    case "will-change": {
-      // will-changeがスタッキングコンテキストを生成するプロパティを参照しているかチェック
+    case "will-change": { // 特定のプロパティを指定したwill-changeでスタッキングコンテキスト生成
       const willChangeValues = value.split(",").map((v) => v.trim());
       return willChangeValues.some(
         (v) =>
@@ -53,15 +52,15 @@ export function createsStackingContext(decl: Declaration): boolean {
 }
 
 /**
- * position プロパティと z-index の組み合わせがスタッキングコンテキストを生成するかチェックする
+ * position と z-index の組み合わせによるスタッキングコンテキスト生成を検出
  *
- * @param element - 対象のCSSルール
- * @returns スタッキングコンテキストを生成するかどうか
+ * @param element - CSSプロパティを含むオブジェクト
+ * @returns スタッキングコンテキストを生成する場合はtrue
  */
 export function hasPositionAndZIndexStackingContext(
   element: Record<string, any>,
 ): boolean {
-  // position値が static 以外かつ z-index が auto 以外の場合
+  // static以外のposition値と、auto以外のz-indexの組み合わせでスタッキングコンテキスト生成
   return (
     element.position &&
     ["relative", "absolute", "fixed", "sticky"].includes(element.position) &&
@@ -71,15 +70,15 @@ export function hasPositionAndZIndexStackingContext(
 }
 
 /**
- * フレックスアイテムやグリッドアイテムの z-index がスタッキングコンテキストを生成するかチェックする
+ * FlexアイテムまたはGridアイテムのz-indexによるスタッキングコンテキスト生成を検出
  *
- * @param element - 対象のCSSルール
- * @returns スタッキングコンテキストを生成するかどうか
+ * @param element - CSSプロパティを含むオブジェクト
+ * @returns スタッキングコンテキストを生成する場合はtrue
  */
 export function hasFlexOrGridItemZIndexStackingContext(
   element: Record<string, any>,
 ): boolean {
-  // flexまたはgridのアイテムで z-index が auto 以外の場合
+  // flexまたはgridコンテナ内の子要素でauto以外のz-indexを持つとスタッキングコンテキスト生成
   const parentDisplay = element.parentDisplay || "";
   return (
     (parentDisplay === "flex" || parentDisplay === "grid") &&
@@ -89,10 +88,10 @@ export function hasFlexOrGridItemZIndexStackingContext(
 }
 
 /**
- * z-index値を数値として取得する
+ * z-index値を数値として解析
  *
  * @param decl - z-index宣言
- * @returns 数値化したz-index値、変換できない場合はnull
+ * @returns 数値化したz-index値、autoまたは無効な値の場合はnull
  */
 export function getZIndexValue(decl: Declaration): number | null {
   if (decl.prop !== "z-index") return null;
@@ -105,10 +104,11 @@ export function getZIndexValue(decl: Declaration): number | null {
 }
 
 /**
- * background-blend-modeとisolation: isolateの組み合わせが無効かチェックする
+ * background-blend-modeとisolation: isolateの組み合わせが問題になるかを検出
+ * isolation: isolateはbackground-blend-modeに影響しないため、無効な組み合わせとなる
  *
- * @param element - 対象のCSSルール
- * @returns 無効な組み合わせかどうか
+ * @param element - CSSプロパティを含むオブジェクト
+ * @returns 無効な組み合わせの場合はtrue
  */
 export function hasInvalidBackgroundBlendWithIsolation(
   element: Record<string, any>,
@@ -121,19 +121,20 @@ export function hasInvalidBackgroundBlendWithIsolation(
 }
 
 /**
- * 要素がすでにスタッキングコンテキストを生成しているかチェックする
+ * 要素が既にスタッキングコンテキストを生成する条件を満たしているか検出
  *
- * @param element - 対象のCSSルール
- * @returns すでにスタッキングコンテキストを生成しているかどうか
+ * @param element - CSSプロパティを含むオブジェクト
+ * @returns 既にスタッキングコンテキストを生成する場合はtrue
  */
 export function alreadyCreatesStackingContext(
   element: Record<string, any>,
 ): boolean {
-  // 各種スタッキングコンテキスト生成条件をチェック
+  // positionとz-indexの組み合わせによるスタッキングコンテキスト
   if (hasPositionAndZIndexStackingContext(element)) return true;
+  // flexまたはgridアイテムのz-indexによるスタッキングコンテキスト
   if (hasFlexOrGridItemZIndexStackingContext(element)) return true;
 
-  // その他のプロパティのチェック
+  // 他の様々なスタッキングコンテキスト生成プロパティをチェック
   if (element.opacity !== undefined && parseFloat(element.opacity) < 1)
     return true;
   if (element.transform !== undefined && element.transform !== "none")
@@ -159,7 +160,7 @@ export function alreadyCreatesStackingContext(
   if (element["mask-border"] !== undefined && element["mask-border"] !== "none")
     return true;
 
-  // contain プロパティのチェック
+  // containプロパティによるスタッキングコンテキスト
   if (element.contain !== undefined) {
     const containValues = element.contain
       .split(" ")
@@ -174,7 +175,7 @@ export function alreadyCreatesStackingContext(
     }
   }
 
-  // will-change プロパティのチェック
+  // will-changeプロパティによるスタッキングコンテキスト
   if (element["will-change"] !== undefined) {
     const willChangeValues = element["will-change"]
       .split(",")

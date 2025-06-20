@@ -1,5 +1,8 @@
 /**
  * 冗長なisolation: isolate宣言を検出するルール
+ *
+ * 既に他のプロパティでスタッキングコンテキストが生成されている場合に
+ * 不要なisolation: isolate宣言を検出し警告する
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
@@ -12,19 +15,15 @@ export const messages = {
   rejected: (property: string) =>
     `冗長なisolation: isolateです。この要素の${property}プロパティが既に新しいスタッキングコンテキストを生成しています。`,
 };
-
-/**
- * 冗長なisolation: isolate宣言を検出するルール
- */
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // CSS宣言を走査する際に使用する要素のプロパティ情報
+    // 各セレクタのプロパティ情報を収集
     const elementProperties: Record<string, Record<string, any>> = {};
 
-    // まず、すべての宣言を収集して各要素のプロパティマップを構築
+    // すべての宣言を収集して各要素のプロパティマップを構築
     root.walkRules((rule) => {
       const selector = rule.selector;
       elementProperties[selector] = elementProperties[selector] || {};
@@ -34,7 +33,7 @@ const rule: Rule = (primary, secondaryOptions) => {
       });
     });
 
-    // 次に、isolation: isolateを持つ要素をチェック
+    // isolation: isolateを持つ要素をチェック
     root.walkRules((rule) => {
       const selector = rule.selector;
       const properties = elementProperties[selector] || {};
@@ -44,7 +43,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         properties.isolation === "isolate" &&
         alreadyCreatesStackingContext(properties)
       ) {
-        // スタッキングコンテキストを生成している他のプロパティを見つける
+        // スタッキングコンテキストを生成している他のプロパティを特定
         let triggeringProperty = "";
 
         if (
@@ -112,7 +111,7 @@ function report({
 }: {
   message: string;
   node: PostCSSRule | Declaration;
-  result: any;
+  result: any; // PostCSS Result
   ruleName: string;
 }) {
   result.warn(message, {

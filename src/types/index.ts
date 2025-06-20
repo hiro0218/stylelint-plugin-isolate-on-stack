@@ -1,12 +1,12 @@
 /**
- * 型定義モジュール
+ * スタッキングコンテキスト関連の型定義
  */
 
 import type { Declaration, Rule as PostCSSRule } from "postcss";
 import type { Rule } from "stylelint";
 
 /**
- * スタッキングコンテキストを生成するプロパティの型定義
+ * スタッキングコンテキストを生成するCSSプロパティ一覧
  */
 export const STACKING_CONTEXT_PROPERTIES = [
   "position",
@@ -29,13 +29,13 @@ export type StackingContextProperty =
   (typeof STACKING_CONTEXT_PROPERTIES)[number];
 
 /**
- * z-index関連プロパティの型定義
+ * z-index関連プロパティ
  */
 export const Z_INDEX_PROPERTIES = ["z-index"] as const;
 export type ZIndexProperty = (typeof Z_INDEX_PROPERTIES)[number];
 
 /**
- * プラグインのルールオプション型
+ * プラグインルールのオプション設定
  */
 export interface RuleOptions {
   severity?: "error" | "warning";
@@ -45,7 +45,7 @@ export interface RuleOptions {
 }
 
 /**
- * レポート関数の型定義
+ * Stylelintレポート関数の引数型
  */
 export interface ReportFunctionParams {
   message: string;
@@ -57,7 +57,7 @@ export interface ReportFunctionParams {
 export type ReportFunction = (params: ReportFunctionParams) => void;
 
 /**
- * ルールのメッセージタイプ
+ * ルールのエラーメッセージ定義
  */
 export interface RuleMessages {
   [key: string]: string;
@@ -66,7 +66,7 @@ export interface RuleMessages {
 }
 
 /**
- * プラグインルールタイプ
+ * Stylelintプラグインルール型
  */
 export interface PluginRule extends Rule<boolean | [boolean, RuleOptions]> {
   ruleName: string;

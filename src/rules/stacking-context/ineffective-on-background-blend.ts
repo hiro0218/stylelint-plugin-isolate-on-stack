@@ -1,5 +1,8 @@
 /**
  * 無効なbackground-blend-modeとisolation: isolateの組み合わせを検出するルール
+ *
+ * isolation: isolateはbackground-blend-modeに影響しないため、
+ * この2つのプロパティの組み合わせを検出して警告する
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
@@ -12,19 +15,15 @@ export const messages = {
   rejected:
     "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
 };
-
-/**
- * 無効なbackground-blend-modeとisolation: isolateの組み合わせを検出するルール
- */
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // CSS宣言を走査する際に使用する要素のプロパティ情報
+    // 各セレクタのプロパティ情報を収集
     const elementProperties: Record<string, Record<string, any>> = {};
 
-    // まず、すべての宣言を収集して各要素のプロパティマップを構築
+    // すべての宣言を収集して各要素のプロパティマップを構築
     root.walkRules((rule) => {
       const selector = rule.selector;
       elementProperties[selector] = elementProperties[selector] || {};
@@ -34,7 +33,7 @@ const rule: Rule = (primary, secondaryOptions) => {
       });
     });
 
-    // 次に、isolation: isolateとbackground-blend-modeの組み合わせをチェック
+    // isolation: isolateとbackground-blend-modeの組み合わせをチェック
     root.walkRules((rule) => {
       const selector = rule.selector;
       const properties = elementProperties[selector] || {};
