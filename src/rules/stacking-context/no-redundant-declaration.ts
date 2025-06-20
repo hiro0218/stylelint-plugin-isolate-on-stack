@@ -6,7 +6,7 @@
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
-import { alreadyCreatesStackingContext } from "../../utils/stacking-context.js";
+import { alreadyCreatesStackingContext, collectElementProperties } from "../../utils/stacking-context.js";
 import { noRedundantDeclarationMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/no-redundant-declaration";
@@ -16,54 +16,30 @@ const rule: Rule = (primary, secondaryOptions) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // 各セレクタのプロパティ情報を収集
-    const elementProperties: Record<string, Record<string, any>> = {};
-
-    // すべての宣言を収集して各要素のプロパティマップを構築
-    root.walkRules((rule) => {
-      const selector = rule.selector;
-      elementProperties[selector] = elementProperties[selector] || {};
-
-      rule.walkDecls((decl) => {
-        elementProperties[selector][decl.prop] = decl.value;
-      });
-    });
+    // Map構造でプロパティを収集
+    const elementProperties = collectElementProperties(root);
 
     // isolation: isolateを持つ要素をチェック
     root.walkRules((rule) => {
       const selector = rule.selector;
-      const properties = elementProperties[selector] || {};
+      const properties = elementProperties.get(selector);
 
-      // isolation: isolateを持ち、他のプロパティで既にスタッキングコンテキストを生成している場合
-      if (properties.isolation === "isolate" && alreadyCreatesStackingContext(properties)) {
-        // スタッキングコンテキストを生成している他のプロパティを特定
-        let triggeringProperty = "";
+      // プロパティが見つからなければスキップ
+      if (!properties) return;
 
-        if (
-          properties.position &&
-          ["relative", "absolute", "fixed", "sticky"].includes(properties.position) &&
-          properties["z-index"] !== undefined &&
-          properties["z-index"] !== "auto"
-        ) {
-          triggeringProperty = `position: ${properties.position}と併用されているz-index: ${properties["z-index"]}`;
-        } else if (properties.opacity !== undefined && parseFloat(properties.opacity) < 1) {
-          triggeringProperty = `opacity: ${properties.opacity}`;
-        } else if (properties.transform !== undefined && properties.transform !== "none") {
-          triggeringProperty = `transform: ${properties.transform}`;
-        } else if (properties.filter !== undefined && properties.filter !== "none") {
-          triggeringProperty = `filter: ${properties.filter}`;
-        } else if (properties["mix-blend-mode"] !== undefined && properties["mix-blend-mode"] !== "normal") {
-          triggeringProperty = `mix-blend-mode: ${properties["mix-blend-mode"]}`;
-        } else if (properties.contain !== undefined) {
-          triggeringProperty = `contain: ${properties.contain}`;
-        } else if (properties["will-change"] !== undefined) {
-          triggeringProperty = `will-change: ${properties["will-change"]}`;
-        } else {
-          // 他のプロパティが見つからない場合は一般的なメッセージ
-          triggeringProperty = "他のプロパティ";
-        }
+      // isolation: isolateを持っているか確認
+      const isolationValue = properties.get("isolation");
+      if (isolationValue !== "isolate") return;
 
-        // isolation: isolate宣言を見つけて報告
+      // プロパティをRecord形式に変換（既存関数との互換性のため）
+      const propsRecord: Record<string, any> = {};
+      properties.forEach((value, key) => {
+        propsRecord[key] = value;
+      });
+
+      // 他のプロパティで既にスタッキングコンテキストが生成されている場合
+      if (alreadyCreatesStackingContext(propsRecord)) {
+        // 違反を報告
         rule.walkDecls("isolation", (decl) => {
           if (decl.value === "isolate") {
             report({

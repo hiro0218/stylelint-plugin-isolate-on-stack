@@ -22,29 +22,18 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions)
 
     // isolation: isolate宣言を持つルールを検索
     root.walkRules((rule) => {
-      let hasIsolate = false;
-
-      // isolation: isolateの使用を確認
+      // 1回のループですべての処理を完了
       rule.walkDecls("isolation", (decl) => {
         if (decl.value === "isolate") {
-          hasIsolate = true;
+          // 違反を報告
+          report({
+            message: performanceHighDescendantCountMessages.rejected,
+            node: decl,
+            result,
+            ruleName,
+          });
         }
       });
-
-      // isolation: isolateが使用されている場合のみ子孫数をチェック
-      if (hasIsolate) {
-        // 子孫数が閾値を超えている場合に警告
-        rule.walkDecls("isolation", (decl) => {
-          if (decl.value === "isolate") {
-            report({
-              message: performanceHighDescendantCountMessages.rejected,
-              node: decl,
-              result,
-              ruleName,
-            });
-          }
-        });
-      }
     });
   };
 };

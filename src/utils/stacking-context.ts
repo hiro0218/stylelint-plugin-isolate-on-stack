@@ -2,7 +2,7 @@
  * スタッキングコンテキストの検出と分析のためのユーティリティ関数
  */
 import type { Declaration } from "postcss";
-import { STACKING_CONTEXT_PROPERTIES } from "../types/index.js";
+import { STACKING_CONTEXT_PROPERTIES, STACKING_CONTEXT_PROPERTIES_SET } from "../types/index.js";
 
 /**
  * CSS宣言がスタッキングコンテキストを生成するか判定
@@ -13,35 +13,47 @@ import { STACKING_CONTEXT_PROPERTIES } from "../types/index.js";
 export function createsStackingContext(decl: Declaration): boolean {
   const { prop, value } = decl;
 
-  // プロパティごとにスタッキングコンテキスト生成条件を確認
-  switch (prop) {
-    case "isolation": // isolation: isolateは明示的にスタッキングコンテキストを生成
-      return value === "isolate";
-    case "opacity": // 1未満の不透明度はスタッキングコンテキストを生成
-      return parseFloat(value) < 1;
-    case "transform":
-    case "filter":
-    case "backdrop-filter":
-    case "perspective":
-    case "clip-path":
-    case "mask":
-    case "mask-image":
-    case "mask-border": // これらはnone以外の値でスタッキングコンテキストを生成
-      return value !== "none";
-    case "mix-blend-mode": // normal以外の混合モードでスタッキングコンテキストを生成
-      return value !== "normal";
-    case "contain": // 特定のcontain値でスタッキングコンテキストを生成
-      return value === "layout" || value === "paint" || value === "strict" || value === "content";
-    case "will-change": {
-      // 特定のプロパティを指定したwill-changeでスタッキングコンテキスト生成
-      const willChangeValues = value.split(",").map((v) => v.trim());
-      return willChangeValues.some(
-        (v) => STACKING_CONTEXT_PROPERTIES.includes(v as any) || v === "opacity" || v === "transform",
-      );
-    }
-    default:
-      return false;
+  // isolation: isolateは明示的なスタッキングコンテキスト生成
+  if (prop === "isolation") {
+    return value === "isolate";
   }
+
+  // transform
+  if (prop === "transform") {
+    return value !== "none";
+  }
+
+  // opacity
+  if (prop === "opacity") {
+    return parseFloat(value) < 1;
+  }
+
+  // これらのプロパティは共通の条件：none以外の値
+  const noneCheckProps = ["filter", "backdrop-filter", "perspective", "clip-path", "mask", "mask-image", "mask-border"];
+  if (noneCheckProps.includes(prop)) {
+    return value !== "none";
+  }
+
+  // mix-blend-modeはnormal以外の値でスタッキングコンテキスト生成
+  if (prop === "mix-blend-mode") {
+    return value !== "normal";
+  }
+
+  // containは特定の値の場合
+  if (prop === "contain") {
+    const validContainValues = new Set(["layout", "paint", "strict", "content"]);
+    const containValues = value.split(" ").map(v => v.trim());
+    return containValues.some((v: string) => validContainValues.has(v));
+  }
+
+  // will-change
+  if (prop === "will-change") {
+    const stackingProps = new Set([...STACKING_CONTEXT_PROPERTIES, "opacity", "transform"]);
+    const willChangeValues = value.split(",").map(v => v.trim());
+    return willChangeValues.some((v: string) => stackingProps.has(v));
+  }
+
+  return false;
 }
 
 /**
@@ -114,47 +126,82 @@ export function hasInvalidBackgroundBlendWithIsolation(element: Record<string, a
  * @returns 既にスタッキングコンテキストを生成する場合はtrue
  */
 export function alreadyCreatesStackingContext(element: Record<string, any>): boolean {
-  // positionとz-indexの組み合わせによるスタッキングコンテキスト
-  if (hasPositionAndZIndexStackingContext(element)) return true;
-  // flexまたはgridアイテムのz-indexによるスタッキングコンテキスト
-  if (hasFlexOrGridItemZIndexStackingContext(element)) return true;
+  // 1. position + z-index の組み合わせ
+  if (element.position &&
+    ["relative", "absolute", "fixed", "sticky"].includes(element.position) &&
+    element["z-index"] !== undefined &&
+    element["z-index"] !== "auto") {
+    return true;
+  }
 
-  // 他の様々なスタッキングコンテキスト生成プロパティをチェック
-  if (element.opacity !== undefined && parseFloat(element.opacity) < 1) return true;
+  // 2. transform
   if (element.transform !== undefined && element.transform !== "none") return true;
+
+  // 3. opacity < 1
+  if (element.opacity !== undefined && parseFloat(element.opacity) < 1) return true;
+
+  // 4. filter系
   if (element.filter !== undefined && element.filter !== "none") return true;
   if (element["backdrop-filter"] !== undefined && element["backdrop-filter"] !== "none") return true;
+
+  // 5. mix-blend-mode
   if (element["mix-blend-mode"] !== undefined && element["mix-blend-mode"] !== "normal") return true;
+
+  // 6. flex/gridアイテムのz-index
+  if (hasFlexOrGridItemZIndexStackingContext(element)) return true;
+
+  // 7. その他のプロパティ
   if (element.perspective !== undefined && element.perspective !== "none") return true;
   if (element["clip-path"] !== undefined && element["clip-path"] !== "none") return true;
-  if (element.mask !== undefined && element.mask !== "none") return true;
-  if (element["mask-image"] !== undefined && element["mask-image"] !== "none") return true;
-  if (element["mask-border"] !== undefined && element["mask-border"] !== "none") return true;
 
-  // containプロパティによるスタッキングコンテキスト
+  // マスク関連のプロパティをまとめて処理
+  const maskProps = ["mask", "mask-image", "mask-border"];
+  for (const prop of maskProps) {
+    if (element[prop] !== undefined && element[prop] !== "none") return true;
+  }    // containプロパティによるスタッキングコンテキスト
   if (element.contain !== undefined) {
+    const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = element.contain.split(" ").map((v: string) => v.trim());
-    if (
-      containValues.includes("layout") ||
-      containValues.includes("paint") ||
-      containValues.includes("strict") ||
-      containValues.includes("content")
-    ) {
+    if (containValues.some((value: string) => validContainValues.has(value))) {
       return true;
     }
   }
 
   // will-changeプロパティによるスタッキングコンテキスト
   if (element["will-change"] !== undefined) {
+    const stackingProps = new Set(["opacity", "transform"]);
     const willChangeValues = element["will-change"].split(",").map((v: string) => v.trim());
-    if (
-      willChangeValues.some(
-        (v: string) => STACKING_CONTEXT_PROPERTIES.includes(v as any) || v === "opacity" || v === "transform",
-      )
-    ) {
+    if (willChangeValues.some((v: string) => STACKING_CONTEXT_PROPERTIES_SET.has(v) || stackingProps.has(v))) {
       return true;
     }
   }
 
   return false;
+}
+
+/**
+ * ルール内のすべての宣言を収集する
+ *
+ * @param root - CSSルートノード
+ * @returns セレクタごとのプロパティマップ
+ */
+export function collectElementProperties(root: any): Map<string, Map<string, string>> {
+  const elementProperties = new Map<string, Map<string, string>>();
+
+  // すべての宣言を収集して各要素のプロパティマップを構築
+  root.walkRules((rule: any) => {
+    const selector = rule.selector;
+
+    if (!elementProperties.has(selector)) {
+      elementProperties.set(selector, new Map<string, string>());
+    }
+
+    const properties = elementProperties.get(selector)!;
+
+    rule.walkDecls((decl: Declaration) => {
+      properties.set(decl.prop, decl.value);
+    });
+  });
+
+  return elementProperties;
 }

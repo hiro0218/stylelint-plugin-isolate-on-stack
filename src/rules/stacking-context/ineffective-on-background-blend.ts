@@ -6,7 +6,7 @@
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
-import { hasInvalidBackgroundBlendWithIsolation } from "../../utils/stacking-context.js";
+import { hasInvalidBackgroundBlendWithIsolation, collectElementProperties } from "../../utils/stacking-context.js";
 import { ineffectiveOnBackgroundBlendMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
@@ -16,38 +16,34 @@ const rule: Rule = (primary, secondaryOptions) => {
     // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // 各セレクタのプロパティ情報を収集
-    const elementProperties: Record<string, Record<string, any>> = {};
-
-    // すべての宣言を収集して各要素のプロパティマップを構築
-    root.walkRules((rule) => {
-      const selector = rule.selector;
-      elementProperties[selector] = elementProperties[selector] || {};
-
-      rule.walkDecls((decl) => {
-        elementProperties[selector][decl.prop] = decl.value;
-      });
-    });
+    // Map構造でプロパティを収集
+    const elementProperties = collectElementProperties(root);
 
     // isolation: isolateとbackground-blend-modeの組み合わせをチェック
     root.walkRules((rule) => {
       const selector = rule.selector;
-      const properties = elementProperties[selector] || {};
+      const properties = elementProperties.get(selector);
 
-      // 無効な組み合わせの場合
-      if (hasInvalidBackgroundBlendWithIsolation(properties)) {
-        // isolation: isolate宣言を見つけて報告
-        rule.walkDecls("isolation", (decl) => {
-          if (decl.value === "isolate") {
-            report({
-              message: ineffectiveOnBackgroundBlendMessages.rejected,
-              node: decl,
-              result,
-              ruleName,
-            });
-          }
-        });
-      }
+      // プロパティが見つからなければスキップ
+      if (!properties) return;
+
+      // isolation: isolateとbackground-blend-modeを持っているか確認
+      const isolationValue = properties.get("isolation");
+      const blendModeValue = properties.get("background-blend-mode");
+
+      if (isolationValue !== "isolate" || !blendModeValue || blendModeValue === "normal") return;
+
+      // 無効な組み合わせが見つかった場合は報告
+      rule.walkDecls("isolation", (decl) => {
+        if (decl.value === "isolate") {
+          report({
+            message: ineffectiveOnBackgroundBlendMessages.rejected,
+            node: decl,
+            result,
+            ruleName,
+          });
+        }
+      });
     });
   };
 };
