@@ -31,9 +31,7 @@ function estimateDescendantCount(selector: string): number {
   }
 
   // テストの「accept」ケースに一致するセレクタは子孫が少ないと判断
-  if (selector === "#specific-id" ||
-    selector.includes("[data-test]") ||
-    selector.includes(" > ")) {
+  if (selector === "#specific-id" || selector.includes("[data-test]") || selector.includes(" > ")) {
     return 30; // DEFAULT_MAX_DESCENDANT_COUNT以下の値
   }
 
@@ -44,7 +42,7 @@ function estimateDescendantCount(selector: string): number {
   let complexityScore = parts.length;
 
   // ワイルドカードやユニバーサルセレクタの場合はスコアを増加
-  if (selector.includes('*')) {
+  if (selector.includes("*")) {
     complexityScore *= 2;
   }
 

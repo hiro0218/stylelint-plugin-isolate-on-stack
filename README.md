@@ -56,17 +56,11 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
     // 無効な背景ブレンドモードとの組み合わせを検出
     "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
     // 過度に高いz-index値を警告
-    "stylelint-plugin-isolate-on-stack/z-index-range": [
-      true,
-      { "maxZIndex": 100 }
-    ],
+    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
     // 副作用のあるプロパティの使用を避け、明示的なisolationを推奨
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
     // 高い子孫要素数を持つスタッキングコンテキストを警告
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
-      true,
-      { "maxDescendantCount": 50 }
-    ]
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }]
   }
 }
 ```

@@ -42,14 +42,14 @@ export function createsStackingContext(decl: Declaration): boolean {
   // containは特定の値の場合
   if (prop === "contain") {
     const validContainValues = new Set(["layout", "paint", "strict", "content"]);
-    const containValues = value.split(" ").map(v => v.trim());
+    const containValues = value.split(" ").map((v) => v.trim());
     return containValues.some((v: string) => validContainValues.has(v));
   }
 
   // will-change
   if (prop === "will-change") {
     const stackingProps = new Set([...STACKING_CONTEXT_PROPERTIES, "opacity", "transform"]);
-    const willChangeValues = value.split(",").map(v => v.trim());
+    const willChangeValues = value.split(",").map((v) => v.trim());
     return willChangeValues.some((v: string) => stackingProps.has(v));
   }
 
@@ -127,10 +127,12 @@ export function hasInvalidBackgroundBlendWithIsolation(element: Record<string, a
  */
 export function alreadyCreatesStackingContext(element: Record<string, any>): boolean {
   // 1. position + z-index の組み合わせ
-  if (element.position &&
+  if (
+    element.position &&
     ["relative", "absolute", "fixed", "sticky"].includes(element.position) &&
     element["z-index"] !== undefined &&
-    element["z-index"] !== "auto") {
+    element["z-index"] !== "auto"
+  ) {
     return true;
   }
 
@@ -158,7 +160,7 @@ export function alreadyCreatesStackingContext(element: Record<string, any>): boo
   const maskProps = ["mask", "mask-image", "mask-border"];
   for (const prop of maskProps) {
     if (element[prop] !== undefined && element[prop] !== "none") return true;
-  }    // containプロパティによるスタッキングコンテキスト
+  } // containプロパティによるスタッキングコンテキスト
   if (element.contain !== undefined) {
     const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = element.contain.split(" ").map((v: string) => v.trim());
