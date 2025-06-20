@@ -3,20 +3,20 @@
 [![NPM version](https://img.shields.io/npm/v/stylelint-plugin-isolate-on-stack.svg)](https://www.npmjs.org/package/stylelint-plugin-isolate-on-stack)
 [![Build Status](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/workflows/CI/badge.svg)](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/actions)
 
-スタッキングコンテキスト関連の問題を検出・防止するStylelintプラグイン。z-indexの使用や積み重ねコンテキストの生成に関するベストプラクティスを強制します。
+スタッキングコンテキスト関連の問題を検出・防止するStylelintプラグインです。このプラグインは、`z-index`の使用や積み重ねコンテキストの生成に関するベストプラクティスを強制し、CSSの品質向上を目指します。
 
 ## 概要
 
-このプラグインは、CSSでのスタッキングコンテキストと`z-index`の使用に関連する問題を検出し、より堅牢で予測可能なスタイリングを実現するためのStylelintルールを提供します。主な目的は以下の通りです：
+このプラグインは、以下の目的で設計されています：
 
 - 冗長または無効な`isolation: isolate`の使用を検出
-- 過度に高い`z-index`値を検出
-- スタッキングコンテキストの生成に関するベストプラクティスを強制
-- 様々なCSS宣言がスタッキングコンテキストに与える影響を理解するのを支援
+- 過度に高い`z-index`値を警告
+- スタッキングコンテキスト生成に関するベストプラクティスを強制
+- CSS宣言がスタッキングコンテキストに与える影響を理解するのを支援
 
 ## スタッキングコンテキストの検出
 
-このプラグインは、以下のようなスタッキングコンテキストを生成するCSSプロパティの存在を自動的に検出します：
+以下のCSSプロパティがスタッキングコンテキストを生成する条件を自動的に検出します：
 
 - `position: relative/absolute/fixed/sticky` + `z-index`が`auto`以外
 - `opacity`が1未満
@@ -27,9 +27,11 @@
 - `contain: layout/paint/strict/content`
 - スタッキングコンテキストを生成するプロパティを指定した`will-change`
 
-これらのプロパティが検出された場合、プラグインは自動的に冗長な`isolation: isolate`宣言を識別します。これらのプロパティはすでに独自のスタッキングコンテキストを生成するためです。
+これらのプロパティが検出された場合、プラグインは冗長な`isolation: isolate`宣言を識別し、適切な修正を促します。
 
 ## インストール
+
+以下のコマンドでインストールできます：
 
 ```bash
 npm install --save-dev stylelint-plugin-isolate-on-stack
@@ -39,7 +41,7 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 
 ### 設定
 
-`.stylelintrc.json`ファイル（または他のStylelint設定ファイル）に以下を追加します：
+`.stylelintrc.json`ファイルに以下を追加してください：
 
 ```json
 {
@@ -165,7 +167,7 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 
 ## スタッキングコンテキストについて
 
-スタッキングコンテキストは、HTML要素をZ軸（視聴者から見た奥行き）に沿って配置する三次元的なレンダリングモデルです。これは、要素が互いにどのように重なり合うかを決定します。
+スタッキングコンテキストは、HTML要素をZ軸（視聴者から見た奥行き）に沿って配置する三次元的なレンダリングモデルです。これにより、要素が互いにどのように重なり合うかが決定されます。
 
 特定のCSS宣言によってスタッキングコンテキストが生成されると、その要素内のすべての子孫要素は、まずそのコンテキスト内で重ね合わせ順序が解決され、その後その要素全体が親コンテキスト内での順序の決定に参加します。
 
