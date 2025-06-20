@@ -55,7 +55,7 @@ export function testRule(options: TestRuleOptions): void {
   const resolvedPlugins = plugins.map((plugin) => {
     if (plugin === process.cwd()) {
       // ビルド済みのdistディレクトリ内のプラグインを参照
-      return path.join(rootDir, "dist", "src", "index.js");
+      return path.join(rootDir, "dist", "index.js");
     } else if (plugin.startsWith(".")) {
       return path.resolve(rootDir, plugin);
     } else if (plugin.startsWith("/")) {

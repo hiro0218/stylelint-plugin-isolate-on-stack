@@ -61,7 +61,7 @@ testRule({
 
 // カスタム最大値でのテスト
 testRule({
-  plugins: [require("path").join(process.cwd(), "dist", "src", "index.js")], // 絶対パスでビルド済みのファイルを指定
+  plugins: [require("path").join(process.cwd(), "dist", "index.js")], // 絶対パスでビルド済みのファイルを指定
   ruleName,
   config: [true, { maxZIndex: 10 }], // 配列形式で正しく渡す
 
