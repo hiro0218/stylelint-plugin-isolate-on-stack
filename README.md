@@ -22,9 +22,13 @@
 - `opacity`が1未満
 - `transform`が`none`以外
 - `filter`が`none`以外
+- `backdrop-filter`が`none`以外
 - `mix-blend-mode`が`normal`以外
 - `isolation: isolate`
 - `contain: layout/paint/strict/content`
+- `perspective`が`none`以外
+- `clip-path`が`none`以外
+- `mask` / `mask-image` / `mask-border`が`none`以外
 - スタッキングコンテキストを生成するプロパティを指定した`will-change`
 
 これらのプロパティが検出された場合、プラグインは冗長な`isolation: isolate`宣言を識別し、適切な修正を促します。
@@ -47,11 +51,22 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
+    // スタッキングコンテキスト関連のルールを有効化
     "stylelint-plugin-isolate-on-stack/no-redundant-declaration": true,
+    // 無効な背景ブレンドモードとの組み合わせを検出
     "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
-    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
+    // 過度に高いz-index値を警告
+    "stylelint-plugin-isolate-on-stack/z-index-range": [
+      true,
+      { "maxZIndex": 100 }
+    ],
+    // 副作用のあるプロパティの使用を避け、明示的なisolationを推奨
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 100 }]
+    // 高い子孫要素数を持つスタッキングコンテキストを警告
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
+      true,
+      { "maxDescendantCount": 100 }
+    ]
   }
 }
 ```
@@ -146,10 +161,25 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 }
 ```
 
-## スタッキングコンテキストについて
+### performance-high-descendant-count
 
-スタッキングコンテキストは、HTML要素をZ軸（視聴者から見た奥行き）に沿って配置する三次元的なレンダリングモデルです。これにより、要素が互いにどのように重なり合うかが決定されます。
+スタッキングコンテキストを生成する要素が多数の子孫要素を持つ場合に警告します。多数の子孫要素を持つスタッキングコンテキストはブラウザのレンダリングパフォーマンスに影響を与える可能性があります。
 
-特定のCSS宣言によってスタッキングコンテキストが生成されると、その要素内のすべての子孫要素は、まずそのコンテキスト内で重ね合わせ順序が解決され、その後その要素全体が親コンテキスト内での順序の決定に参加します。
+**不適切な例：**
 
-`isolation: isolate`は、他の視覚的な副作用なしに純粋にスタッキングコンテキストを生成するための唯一のプロパティです。
+```css
+.complex-stacking-context {
+  position: relative;
+  z-index: 1;
+  /* この要素が100を超える子孫要素を持つ場合に警告 */
+}
+```
+
+**適切な例：**
+
+```css
+.optimized-structure {
+  /* 子孫要素数が制限内に収まるよう、DOM構造を最適化 */
+  isolation: isolate;
+}
+```
