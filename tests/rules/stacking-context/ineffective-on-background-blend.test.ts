@@ -12,40 +12,40 @@ testRule({
   accept: [
     {
       code: ".valid { isolation: isolate; }",
-      description: "単純なisolation: isolateの使用",
+      description: "Simple usage of isolation: isolate",
     },
     {
       code: ".valid { background-blend-mode: multiply; }",
-      description: "単純なbackground-blend-modeの使用",
+      description: "Simple usage of background-blend-mode",
     },
     {
       code: ".valid { isolation: isolate; mix-blend-mode: multiply; }",
-      description: "isolation: isolateとmix-blend-modeの組み合わせは有効",
+      description: "Combination of isolation: isolate and mix-blend-mode is effective",
     },
     {
       code: ".valid { background-blend-mode: normal; isolation: isolate; }",
-      description: "background-blend-mode: normalは特別な効果がないため問題なし",
+      description: "background-blend-mode: normal has no special effect so no issues",
     },
   ],
 
   reject: [
     {
       code: ".invalid { background-blend-mode: multiply; isolation: isolate; }",
-      description: "background-blend-modeにisolation: isolateが効果がない",
+      description: "isolation: isolate has no effect on background-blend-mode",
       message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 46,
     },
     {
       code: ".invalid { background-blend-mode: screen; isolation: isolate; }",
-      description: "background-blend-mode: screenにisolation: isolateが効果がない",
+      description: "isolation: isolate has no effect on background-blend-mode: screen",
       message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 44,
     },
     {
       code: ".invalid { background-blend-mode: overlay; isolation: isolate; }",
-      description: "background-blend-mode: overlayにisolation: isolateが効果がない",
+      description: "isolation: isolate has no effect on background-blend-mode: overlay",
       message: ineffectiveOnBackgroundBlendMessages.rejected,
       line: 1,
       column: 45,
