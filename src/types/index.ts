@@ -29,12 +29,6 @@ export type StackingContextProperty =
   (typeof STACKING_CONTEXT_PROPERTIES)[number];
 
 /**
- * z-index関連プロパティ
- */
-export const Z_INDEX_PROPERTIES = ["z-index"] as const;
-export type ZIndexProperty = (typeof Z_INDEX_PROPERTIES)[number];
-
-/**
  * プラグインルールのオプション設定
  */
 export interface RuleOptions {

@@ -9,11 +9,12 @@ import { Declaration } from "postcss";
 import { getZIndexValue } from "../../utils/stacking-context.js";
 import type { RuleOptions } from "../../types/index.js";
 
-export const ruleName = "stylelint-plugin-isolate-on-stack/z-index-range";
+const ruleName =
+  "stylelint-plugin-isolate-on-stack/z-index-range";
 
-export const messages = {
-  rejected: (value: number, max: number) =>
-    `z-index値 ${value} が最大許容値 ${max} を超えています。スタッキングコンテキストを生成してz-indexをリセットすることを検討してください。`,
+const messages = {
+  rejected: (zIndexValue: number, maxZIndex: number) =>
+    `z-index値「${zIndexValue}」は許容範囲（最大: ${maxZIndex}）を超えています。`,
 };
 const rule: Rule<boolean | [boolean, RuleOptions]> = (
   primary,

@@ -8,10 +8,10 @@ import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { hasInvalidBackgroundBlendWithIsolation } from "../../utils/stacking-context.js";
 
-export const ruleName =
+const ruleName =
   "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
 
-export const messages = {
+const messages = {
   rejected:
     "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
 };

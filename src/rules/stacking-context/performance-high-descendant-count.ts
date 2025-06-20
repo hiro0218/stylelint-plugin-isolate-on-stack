@@ -8,12 +8,12 @@ import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import type { RuleOptions } from "../../types/index.js";
 
-export const ruleName =
+const ruleName =
   "stylelint-plugin-isolate-on-stack/performance-high-descendant-count";
 
-export const messages = {
-  rejected: (count: number, threshold: number) =>
-    `多数の子孫（${count}個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: ${threshold}個`,
+const messages = {
+  rejected:
+    "isolation: isolateによるスタッキングコンテキストは、子孫要素が多い場合パフォーマンスに悪影響を与える可能性があります。",
 };
 const rule: Rule<boolean | [boolean, RuleOptions]> = (
   primary,
@@ -50,7 +50,7 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
         rule.walkDecls("isolation", (decl) => {
           if (decl.value === "isolate") {
             report({
-              message: messages.rejected(0, threshold),
+              message: messages.rejected,
               node: decl,
               result,
               ruleName,

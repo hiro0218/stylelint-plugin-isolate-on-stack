@@ -8,12 +8,12 @@
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 
-export const ruleName =
+const ruleName =
   "stylelint-plugin-isolate-on-stack/prefer-over-side-effects";
 
-export const messages = {
-  rejected: (property: string, value: string) =>
-    `${property}: ${value}の意図しない副作用を避け、スタッキングコンテキストを生成するためにisolation: isolateの使用を検討してください。`,
+const messages = {
+  rejected:
+    "isolation: isolateの代わりに、transformやwill-changeなど他のスタッキングコンテキスト作成プロパティの利用を検討してください。",
 };
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
@@ -31,7 +31,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         parseFloat(value) < 1
       ) {
         report({
-          message: messages.rejected(prop, value),
+          message: messages.rejected,
           node: decl,
           result,
           ruleName,
@@ -46,7 +46,7 @@ const rule: Rule = (primary, secondaryOptions) => {
           value === "matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)")
       ) {
         report({
-          message: messages.rejected(prop, value),
+          message: messages.rejected,
           node: decl,
           result,
           ruleName,
@@ -61,7 +61,7 @@ const rule: Rule = (primary, secondaryOptions) => {
           value.includes("z-index"))
       ) {
         report({
-          message: messages.rejected(prop, value),
+          message: messages.rejected,
           node: decl,
           result,
           ruleName,
