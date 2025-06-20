@@ -25,9 +25,3 @@ export const preferOverSideEffectsMessages = {
     // isolation: isolateの代わりに、transformやwill-changeなど他のスタッキングコンテキスト作成プロパティの利用を検討してください。
     "Consider using other stacking context properties like 'transform' or 'will-change' instead of 'isolation: isolate'.",
 };
-
-export const performanceHighDescendantCountMessages = {
-  rejected:
-    // isolation: isolateによるスタッキングコンテキストは、子孫要素が多い場合パフォーマンスに悪影響を与える可能性があります。
-    "Stacking contexts created by 'isolation: isolate' may cause performance issues when applied to elements with many descendants.",
-};

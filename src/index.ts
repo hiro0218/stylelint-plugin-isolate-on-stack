@@ -6,7 +6,6 @@ import stylelint from "stylelint";
 import noRedundantDeclarationRule from "./rules/stacking-context/no-redundant-declaration.js";
 import ineffectiveOnBackgroundBlendRule from "./rules/stacking-context/ineffective-on-background-blend.js";
 import preferOverSideEffectsRule from "./rules/stacking-context/prefer-over-side-effects.js";
-import performanceHighDescendantCountRule from "./rules/stacking-context/performance-high-descendant-count.js";
 import zIndexRangeRule from "./rules/z-index-range/index.js";
 
 // プラグインの名前空間
@@ -28,11 +27,6 @@ const preferOverSideEffects = stylelint.createPlugin(
   preferOverSideEffectsRule,
 );
 
-const performanceHighDescendantCount = stylelint.createPlugin(
-  `${namespace}/performance-high-descendant-count`,
-  performanceHighDescendantCountRule,
-);
-
 const zIndexRange = stylelint.createPlugin(`${namespace}/z-index-range`, zIndexRangeRule);
 
 // Stylelint v16 ESM形式に対応したプラグイン配列
@@ -40,7 +34,6 @@ const plugins = [
   noRedundantDeclaration,
   ineffectiveOnBackgroundBlend,
   preferOverSideEffects,
-  performanceHighDescendantCount,
   zIndexRange,
 ];
 
@@ -52,6 +45,5 @@ export {
   noRedundantDeclarationRule as noRedundantDeclaration,
   ineffectiveOnBackgroundBlendRule as ineffectiveOnBackgroundBlend,
   preferOverSideEffectsRule as preferOverSideEffects,
-  performanceHighDescendantCountRule as performanceHighDescendantCount,
   zIndexRangeRule as zIndexRange,
 };
