@@ -7,13 +7,10 @@
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { hasInvalidBackgroundBlendWithIsolation } from "../../utils/stacking-context.js";
+import { ineffectiveOnBackgroundBlendMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend";
 
-const messages = {
-  rejected:
-    "無効なisolation: isolateです。このプロパティは、要素内部の背景レイヤーで動作するbackground-blend-modeには影響しません。",
-};
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
@@ -43,7 +40,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         rule.walkDecls("isolation", (decl) => {
           if (decl.value === "isolate") {
             report({
-              message: messages.rejected,
+              message: ineffectiveOnBackgroundBlendMessages.rejected,
               node: decl,
               result,
               ruleName,
@@ -76,6 +73,6 @@ function report({
 }
 
 rule.ruleName = ruleName;
-rule.messages = messages;
+rule.messages = ineffectiveOnBackgroundBlendMessages;
 
 export default rule;

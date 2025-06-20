@@ -7,12 +7,10 @@
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { alreadyCreatesStackingContext } from "../../utils/stacking-context.js";
+import { noRedundantDeclarationMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/no-redundant-declaration";
 
-const messages = {
-  rejected: "冗長なisolation: isolateです。他のスタッキングコンテキスト作成プロパティが存在しない場合は不要です。",
-};
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
@@ -69,7 +67,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         rule.walkDecls("isolation", (decl) => {
           if (decl.value === "isolate") {
             report({
-              message: messages.rejected,
+              message: noRedundantDeclarationMessages.rejected,
               node: decl,
               result,
               ruleName,
@@ -102,6 +100,6 @@ function report({
 }
 
 rule.ruleName = ruleName;
-rule.messages = messages;
+rule.messages = noRedundantDeclarationMessages;
 
 export default rule;

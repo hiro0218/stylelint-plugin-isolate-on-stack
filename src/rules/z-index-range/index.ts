@@ -7,14 +7,11 @@
 import { Rule } from "stylelint";
 import { Declaration } from "postcss";
 import { getZIndexValue } from "../../utils/stacking-context.js";
+import { zIndexRangeMessages } from "../../utils/message.js";
 import type { RuleOptions } from "../../types/index.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/z-index-range";
 
-const messages = {
-  rejected: (zIndexValue: number, maxZIndex: number) =>
-    `z-index値「${zIndexValue}」は許容範囲（最大: ${maxZIndex}）を超えています。`,
-};
 const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
@@ -31,7 +28,7 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions)
       // 数値であり、最大値を超える場合に報告
       if (zIndexValue !== null && zIndexValue > maxZIndex) {
         report({
-          message: messages.rejected(zIndexValue, maxZIndex),
+          message: zIndexRangeMessages.rejected(zIndexValue, maxZIndex),
           node: decl,
           result,
           ruleName,
@@ -62,6 +59,6 @@ function report({
 }
 
 rule.ruleName = ruleName;
-rule.messages = messages;
+rule.messages = zIndexRangeMessages;
 
 export default rule;

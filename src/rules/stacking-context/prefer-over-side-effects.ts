@@ -7,13 +7,10 @@
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
+import { preferOverSideEffectsMessages } from "../../utils/message.js";
 
 const ruleName = "stylelint-plugin-isolate-on-stack/prefer-over-side-effects";
 
-const messages = {
-  rejected:
-    "isolation: isolateの代わりに、transformやwill-changeなど他のスタッキングコンテキスト作成プロパティの利用を検討してください。",
-};
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
     // プライマリオプションがtrueでない場合はスキップ
@@ -26,7 +23,7 @@ const rule: Rule = (primary, secondaryOptions) => {
       // 不透明度が極めて1に近い値を使ったハック
       if (prop === "opacity" && parseFloat(value) >= 0.99 && parseFloat(value) < 1) {
         report({
-          message: messages.rejected,
+          message: preferOverSideEffectsMessages.rejected,
           node: decl,
           result,
           ruleName,
@@ -41,7 +38,7 @@ const rule: Rule = (primary, secondaryOptions) => {
           value === "matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)")
       ) {
         report({
-          message: messages.rejected,
+          message: preferOverSideEffectsMessages.rejected,
           node: decl,
           result,
           ruleName,
@@ -54,7 +51,7 @@ const rule: Rule = (primary, secondaryOptions) => {
         (value.includes("opacity") || value.includes("transform") || value.includes("z-index"))
       ) {
         report({
-          message: messages.rejected,
+          message: preferOverSideEffectsMessages.rejected,
           node: decl,
           result,
           ruleName,
@@ -85,6 +82,6 @@ function report({
 }
 
 rule.ruleName = ruleName;
-rule.messages = messages;
+rule.messages = preferOverSideEffectsMessages;
 
 export default rule;
