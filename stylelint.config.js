@@ -1,6 +1,6 @@
 /** @type {import('stylelint').Config} */
 export default {
-  plugins: ["./dist/src/index.js"],
+  plugins: ["./dist/index.js"],
   rules: {
     // 冗長なisolation: isolate宣言を検出
     "stylelint-plugin-isolate-on-stack/no-redundant-declaration": true,
