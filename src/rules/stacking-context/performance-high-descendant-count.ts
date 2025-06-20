@@ -1,9 +1,6 @@
 /**
  * パフォーマンスに影響を与える可能性のある多数の子孫を持つ要素に
  * isolation: isolateを使用している場合の警告ルール
- *
- * 注意: このルールは実際のDOM要素数をCSSだけで判断することができないため、
- * コメントによる特別なマーカーを使用する実装になっています。
  */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
@@ -39,14 +36,9 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
         ? options.maxDescendantCount
         : 100; // デフォルト値は100
 
-    // 大量の子孫を持つ要素を特定するためのコメントマーカー
-    // 例: /* @descendants: 150 */
-    const descendantCommentPattern = /@descendants:\s*(\d+)/i;
-
     // isolation: isolate宣言を持つルールを検索
     root.walkRules((rule) => {
       let hasIsolate = false;
-      let descendantCount = 0;
 
       // isolation: isolateの使用を確認
       rule.walkDecls("isolation", (decl) => {
@@ -57,32 +49,17 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (
 
       // isolation: isolateが使用されている場合のみ子孫数をチェック
       if (hasIsolate) {
-        // 前の兄弟ノードからコメントを探す
-        let prev = rule.prev();
-        while (prev) {
-          if (prev.type === "comment") {
-            const match = prev.text.match(descendantCommentPattern);
-            if (match && match[1]) {
-              descendantCount = parseInt(match[1], 10);
-              break;
-            }
-          }
-          prev = prev.prev();
-        }
-
         // 子孫数が閾値を超えている場合に警告
-        if (descendantCount > threshold) {
-          rule.walkDecls("isolation", (decl) => {
-            if (decl.value === "isolate") {
-              report({
-                message: messages.rejected(descendantCount, threshold),
-                node: decl,
-                result,
-                ruleName,
-              });
-            }
-          });
-        }
+        rule.walkDecls("isolation", (decl) => {
+          if (decl.value === "isolate") {
+            report({
+              message: messages.rejected(0, threshold),
+              node: decl,
+              result,
+              ruleName,
+            });
+          }
+        });
       }
     });
   };

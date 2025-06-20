@@ -152,19 +152,6 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 }
 ```
 
-### performance-high-descendant-count
-
-パフォーマンスに影響を与える可能性のある多数の子孫を持つ要素に`isolation: isolate`を使用している場合に警告します。このルールはCSS前のコメントで子孫数を指定する必要があります。
-
-**警告例：**
-
-```css
-/* @descendants: 150 */
-.high-descendant-count {
-  isolation: isolate; /* パフォーマンスに影響する可能性 */
-}
-```
-
 ## スタッキングコンテキストについて
 
 スタッキングコンテキストは、HTML要素をZ軸（視聴者から見た奥行き）に沿って配置する三次元的なレンダリングモデルです。これにより、要素が互いにどのように重なり合うかが決定されます。

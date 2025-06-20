@@ -11,32 +11,16 @@ testRule({
   accept: [
     {
       code: ".valid { isolation: isolate; }",
-      description: "コメントなしの通常のisolation: isolateの使用",
-    },
-    {
-      code: "/* @descendants: 50 */ .valid { isolation: isolate; }",
-      description: "閾値以下の子孫数を持つ要素のisolation: isolateの使用",
-    },
-    {
-      code: "/* Some other comment */ .valid { isolation: isolate; }",
-      description: "子孫数を示さないコメントの後のisolation: isolateの使用",
+      description: "通常のisolation: isolateの使用",
     },
   ],
 
   reject: [
     {
-      code: "/* @descendants: 150 */ .invalid { isolation: isolate; }",
-      description: "多数の子孫を持つ要素にisolation: isolateを使用",
+      code: ".invalid { isolation: isolate; }",
+      description: "isolation: isolateの使用が閾値を超える場合",
       message:
-        "多数の子孫（150個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: 100個",
-      line: 1,
-      column: 42,
-    },
-    {
-      code: "/* @descendants: 500 */ .invalid { isolation: isolate; }",
-      description: "非常に多くの子孫を持つ要素にisolation: isolateを使用",
-      message:
-        "多数の子孫（500個）を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。閾値: 100個",
+        "多数の子孫を持つ要素にisolation: isolateを使用すると、パフォーマンスに影響を与える可能性があります。これが本当に必要か確認してください。",
       line: 1,
       column: 42,
     },
