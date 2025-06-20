@@ -12,44 +12,44 @@ testRule({
   accept: [
     {
       code: ".valid { z-index: 1; }",
-      description: "適切な範囲内のz-index値",
+      description: "z-index value within appropriate range",
     },
     {
       code: ".valid { z-index: 50; }",
-      description: "適切な範囲内のz-index値",
+      description: "z-index value within appropriate range",
     },
     {
       code: ".valid { z-index: 100; }",
-      description: "最大許容値と等しいz-index値",
+      description: "z-index value equal to maximum allowed value",
     },
     {
       code: ".valid { z-index: -10; }",
-      description: "負のz-index値は許容される",
+      description: "Negative z-index values are allowed",
     },
     {
       code: ".valid { z-index: auto; }",
-      description: "z-index: autoは数値ではないので問題なし",
+      description: "z-index: auto is not a number so it's valid",
     },
   ],
 
   reject: [
     {
       code: ".invalid { z-index: 101; }",
-      description: "最大許容値を超えるz-index値",
+      description: "z-index value exceeding the maximum allowed value",
       message: zIndexRangeMessages.rejected(101, 100),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 999; }",
-      description: "著しく高いz-index値",
+      description: "Significantly high z-index value",
       message: zIndexRangeMessages.rejected(999, 100),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 99999; }",
-      description: "極端に高いz-index値",
+      description: "Extremely high z-index value",
       message: zIndexRangeMessages.rejected(99999, 100),
       line: 1,
       column: 11,
@@ -57,34 +57,34 @@ testRule({
   ],
 });
 
-// カスタム最大値でのテスト
+// Test with custom maximum value
 testRule({
-  plugins: [require("path").join(process.cwd(), "dist", "index.js")], // 絶対パスでビルド済みのファイルを指定
+  plugins: [require("path").join(process.cwd(), "dist", "index.js")], // Specify built file with absolute path
   ruleName,
-  config: [true, { maxZIndex: 10 }], // 配列形式で正しく渡す
+  config: [true, { maxZIndex: 10 }], // Pass correctly in array format
 
   accept: [
     {
       code: ".valid { z-index: 1; }",
-      description: "カスタム最大値内のz-index値",
+      description: "z-index value within custom maximum",
     },
     {
       code: ".valid { z-index: 10; }",
-      description: "カスタム最大値と等しいz-index値",
+      description: "z-index value equal to custom maximum",
     },
   ],
 
   reject: [
     {
       code: ".invalid { z-index: 11; }",
-      description: "カスタム最大値を超えるz-index値",
+      description: "z-index value exceeding custom maximum",
       message: zIndexRangeMessages.rejected(11, 10),
       line: 1,
       column: 11,
     },
     {
       code: ".invalid { z-index: 100; }",
-      description: "デフォルト最大値は許容されるがカスタム最大値では許容されないz-index値",
+      description: "z-index value allowed by default maximum but not by custom maximum",
       message: zIndexRangeMessages.rejected(100, 10),
       line: 1,
       column: 11,
