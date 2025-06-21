@@ -81,10 +81,16 @@ example.css                 # Example CSS for testing
 - All code must be written in TypeScript
 - Strictly adhere to ESLint and Prettier configurations
 - Test coverage must meet the following thresholds:
-  - Branch coverage: 85% or higher
-  - Function coverage: 90% or higher
-  - Line coverage: 85% or higher
-  - Statement coverage: 85% or higher
+  - Branch coverage: 95% or higher (current: 95.54%)
+  - Function coverage: 80% or higher (current: 80.76%)
+  - Line coverage: 85% or higher (current: 87.44%)
+  - Statement coverage: 85% or higher (current: 87.44%)
+- Best practices for ensuring rule file code quality:
+  - Split logic into small, exported functions for testability
+  - Each function should follow the single responsibility principle
+  - Separate rule logic from reporting functionality
+  - Create comprehensive test cases including edge cases
+  - Test all configuration patterns including falsy values
 - JSDoc comments are mandatory for all public APIs
 - Maintain TypeScript `strict: true` configuration
 - Use kebab-case for all file and directory names
@@ -242,8 +248,7 @@ function isRedundantIsolation(decl: Declaration): boolean {
 
   // Check if there are other stacking context creating properties
   const hasOtherStackingContext = parentRule.nodes.some(
-    (node) =>
-      node.type === "decl" && node !== decl && createsStackingContext(node),
+    (node) => node.type === "decl" && node !== decl && createsStackingContext(node),
   );
 
   // If no other stacking context creators, isolation might be redundant
@@ -255,9 +260,7 @@ function createsStackingContext(decl: Declaration): boolean {
 
   switch (prop) {
     case "position":
-      return (
-        POSITIONING_VALUES.includes(value as any) && hasZIndexSibling(decl)
-      );
+      return POSITIONING_VALUES.includes(value as any) && hasZIndexSibling(decl);
     case "opacity":
       return parseFloat(value) < 1;
     case "transform":
@@ -269,13 +272,9 @@ function createsStackingContext(decl: Declaration): boolean {
     case "mix-blend-mode":
       return value !== "normal";
     case "contain":
-      return ["layout", "paint", "strict", "content"].some((v) =>
-        value.includes(v),
-      );
+      return ["layout", "paint", "strict", "content"].some((v) => value.includes(v));
     case "will-change":
-      return ["transform", "opacity", "filter"].some((prop) =>
-        value.includes(prop),
-      );
+      return ["transform", "opacity", "filter"].some((prop) => value.includes(prop));
     default:
       return false;
   }
@@ -287,9 +286,7 @@ function hasStackingRelevantSiblings(decl: Declaration): boolean {
 
   return parentRule.nodes.some(
     (node) =>
-      node.type === "decl" &&
-      node !== decl &&
-      ["z-index", "position", "transform", "opacity"].includes(node.prop),
+      node.type === "decl" && node !== decl && ["z-index", "position", "transform", "opacity"].includes(node.prop),
   );
 }
 ```
@@ -310,14 +307,12 @@ function hasStackingRelevantSiblings(decl: Declaration): boolean {
 ```typescript
 const messages = {
   // Use descriptive, actionable messages
-  redundantIsolation: () =>
-    `Redundant 'isolation: isolate' without meaningful stacking context benefits.`,
+  redundantIsolation: () => `Redundant 'isolation: isolate' without meaningful stacking context benefits.`,
 
   unnecessaryIsolation: () =>
     `'isolation: isolate' may be unnecessary. Consider if this creates intended layer separation.`,
 
-  performanceImpact: () =>
-    `'isolation: isolate' creates new stacking context, which may impact performance.`,
+  performanceImpact: () => `'isolation: isolate' creates new stacking context, which may impact performance.`,
 };
 ```
 
