@@ -1,6 +1,9 @@
 import type { Declaration } from "postcss";
 import { STACKING_CONTEXT_PROPERTIES, STACKING_CONTEXT_PROPERTIES_SET } from "../types/index.js";
 
+// containプロパティの有効値セットを関数外で定義し、毎回再生成しないようにする
+const VALID_CONTAIN_VALUES = new Set(["layout", "paint", "strict", "content"]);
+
 /**
  * Determines if a CSS declaration creates a stacking context
  *
@@ -33,9 +36,8 @@ export function createsStackingContext(decl: Declaration): boolean {
 
   // Check for contain property values that create stacking contexts
   if (prop === "contain") {
-    const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = value.split(" ").map((v) => v.trim());
-    return containValues.some((v: string) => validContainValues.has(v));
+    return containValues.some((v: string) => VALID_CONTAIN_VALUES.has(v));
   }
 
   // Check if will-change references properties that create stacking contexts
@@ -154,9 +156,8 @@ export function alreadyCreatesStackingContext(element: Record<string, any>): boo
     if (element[prop] !== undefined && element[prop] !== "none") return true;
   } // Stacking context from contain property
   if (element.contain !== undefined) {
-    const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = element.contain.split(" ").map((v: string) => v.trim());
-    if (containValues.some((value: string) => validContainValues.has(value))) {
+    if (containValues.some((value: string) => VALID_CONTAIN_VALUES.has(value))) {
       return true;
     }
   }
