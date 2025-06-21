@@ -56,17 +56,11 @@ Add the following to your `.stylelintrc.json` file:
     // Detect invalid combinations with background blend modes
     "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
     // Warn against excessively high z-index values
-    "stylelint-plugin-isolate-on-stack/z-index-range": [
-      true,
-      { "maxZIndex": 100 }
-    ],
+    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
     // Encourage explicit isolation over properties with side effects
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
     // Warn about stacking contexts with high descendant counts
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [
-      true,
-      { "maxDescendantCount": 50 }
-    ]
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }]
   }
 }
 ```

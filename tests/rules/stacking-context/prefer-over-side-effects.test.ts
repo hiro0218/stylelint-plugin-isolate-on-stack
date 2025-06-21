@@ -165,7 +165,7 @@ describe("prefer-over-side-effects unit tests", () => {
 
       const transformHack3 = new Declaration({
         prop: "transform",
-        value: "matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)"
+        value: "matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)",
       });
       expect(isStackingContextHack(transformHack3)).toBe(true);
 

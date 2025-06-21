@@ -6,7 +6,7 @@ import {
   ruleName,
   estimateDescendantCount,
   DEFAULT_MAX_DESCENDANT_COUNT,
-  checkSelectorDescendantCount
+  checkSelectorDescendantCount,
 } from "../../../src/rules/stacking-context/performance-high-descendant-count";
 import rule from "../../../src/rules/stacking-context/performance-high-descendant-count";
 
@@ -234,17 +234,14 @@ testRule({
 describe("checkSelectorDescendantCount", () => {
   it("warns about selectors with high descendant counts", () => {
     // テスト用のPostCSSオブジェクトを作成
-    const root = postcss.parse(
-      "div { isolation: isolate; }\n" +
-      "#specific-id { isolation: isolate; }"
-    );
+    const root = postcss.parse("div { isolation: isolate; }\n" + "#specific-id { isolation: isolate; }");
 
     // モックの結果オブジェクト
     const warnings: any[] = [];
     const result = {
       warn: (message: string, options: any) => {
         warnings.push({ message, options });
-      }
+      },
     };
 
     // 関数を実行
@@ -260,17 +257,14 @@ describe("checkSelectorDescendantCount", () => {
 
   it("respects the custom maxDescendantCount threshold", () => {
     // テスト用のPostCSSオブジェクトを作成
-    const root = postcss.parse(
-      "div { isolation: isolate; }\n" +
-      "#specific-id { isolation: isolate; }"
-    );
+    const root = postcss.parse("div { isolation: isolate; }\n" + "#specific-id { isolation: isolate; }");
 
     // モックの結果オブジェクト
     const warnings: any[] = [];
     const result = {
       warn: (message: string, options: any) => {
         warnings.push({ message, options });
-      }
+      },
     };
 
     // 関数を実行（しきい値を高く設定）
@@ -282,17 +276,14 @@ describe("checkSelectorDescendantCount", () => {
 
   it("ignores rules without stacking context properties", () => {
     // スタッキングコンテキストを生成しないCSSルール
-    const root = postcss.parse(
-      "div { color: red; }\n" +
-      ".class { margin: 10px; }"
-    );
+    const root = postcss.parse("div { color: red; }\n" + ".class { margin: 10px; }");
 
     // モックの結果オブジェクト
     const warnings: any[] = [];
     const result = {
       warn: (message: string, options: any) => {
         warnings.push({ message, options });
-      }
+      },
     };
 
     // 関数を実行
@@ -323,7 +314,7 @@ describe("performanceHighDescendantCountRule integration", () => {
     const result = {
       warn: (message: string, options: any) => {
         warnings.push({ message, options });
-      }
+      },
     };
 
     // プライマリオプションのみを指定してデフォルト設定でルールを実行
@@ -333,12 +324,7 @@ describe("performanceHighDescendantCountRule integration", () => {
     // 警告が出ていることを確認
     expect(warnings.length).toBeGreaterThan(0);
     // divまたは.very-general-classに対する警告が存在することを確認
-    expect(
-      warnings.some(w =>
-        w.message.includes('div') ||
-        w.message.includes('.very-general-class *')
-      )
-    ).toBe(true);
+    expect(warnings.some((w) => w.message.includes("div") || w.message.includes(".very-general-class *"))).toBe(true);
 
     // プライマリオプションがfalseの場合は警告が出ないことを確認
     const falseRuleFn = rule(false);
@@ -347,7 +333,7 @@ describe("performanceHighDescendantCountRule integration", () => {
     const falseResult = {
       warn: (message: string, options: any) => {
         falseWarnings.push({ message, options });
-      }
+      },
     };
 
     falseRuleFn(root, falseResult);

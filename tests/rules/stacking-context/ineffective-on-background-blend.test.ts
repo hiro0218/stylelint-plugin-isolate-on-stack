@@ -185,7 +185,7 @@ describe("ineffective-on-background-blend unit tests", () => {
         ineffectiveOnBackgroundBlendMessages.rejected,
         expect.objectContaining({
           ruleName: importedRuleName,
-        })
+        }),
       );
     });
 

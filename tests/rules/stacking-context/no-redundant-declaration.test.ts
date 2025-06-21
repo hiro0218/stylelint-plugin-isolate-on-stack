@@ -290,7 +290,7 @@ describe("no-redundant-declaration unit tests", () => {
         noRedundantDeclarationMessages.rejected,
         expect.objectContaining({
           ruleName: importedRuleName,
-        })
+        }),
       );
     });
 

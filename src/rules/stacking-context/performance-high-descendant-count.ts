@@ -92,7 +92,10 @@ export function checkSelectorDescendantCount(root: Root, result: any, maxDescend
 }
 
 // Rule definition
-const performanceHighDescendantCountRule = (primary: boolean, secondaryOptions?: { maxDescendantCount?: number }): ((root: Root, result: any) => void) => {
+const performanceHighDescendantCountRule = (
+  primary: boolean,
+  secondaryOptions?: { maxDescendantCount?: number },
+): ((root: Root, result: any) => void) => {
   return (root: Root, result: any): void => {
     // Skip if primary option is not true
     if (primary !== true) return;

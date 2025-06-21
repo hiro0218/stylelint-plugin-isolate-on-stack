@@ -202,7 +202,7 @@ describe("z-index-range unit tests", () => {
         zIndexRangeMessages.rejected(101, DEFAULT_MAX_Z_INDEX),
         expect.objectContaining({
           ruleName: importedRuleName,
-        })
+        }),
       );
     });
 
@@ -219,7 +219,7 @@ describe("z-index-range unit tests", () => {
         zIndexRangeMessages.rejected(20, customMax),
         expect.objectContaining({
           ruleName: importedRuleName,
-        })
+        }),
       );
     });
 
