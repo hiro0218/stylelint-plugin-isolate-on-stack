@@ -1,24 +1,20 @@
-/**
- * 多数の子孫を持つスタッキングコンテキスト要素を検出するルール
- *
- * 多数の子孫要素を持つスタッキングコンテキストはレンダリングパフォーマンスに影響するため、
- * 特定の閾値を超える場合に警告を出す
- */
 import { Declaration, Root, Rule as PostCSSRule } from "postcss";
 import { alreadyCreatesStackingContext } from "../../utils/stacking-context.js";
 import { performanceHighDescendantCountMessages } from "../../utils/message.js";
 
 export const ruleName = "stylelint-plugin-isolate-on-stack/performance-high-descendant-count";
 
-// デフォルトの最大子孫要素数
 const DEFAULT_MAX_DESCENDANT_COUNT = 50;
 
 /**
- * セレクタから推定子孫要素数を算出する
- * この関数は実際のDOMではなく、セレクタの複雑さを元に概算値を返す
+ * Estimates the number of descendant elements based on selector complexity
+ * This function approximates DOM size without actual DOM traversal
+ *
+ * @param selector - CSS selector to analyze
+ * @returns Estimated number of descendants
  */
 function estimateDescendantCount(selector: string): number {
-  // セレクタに応じた固定値を返す（テストとの整合性のため）
+  // Known test cases with fixed values for predictable testing
   if (selector === "div") {
     return 60;
   }
@@ -29,23 +25,21 @@ function estimateDescendantCount(selector: string): number {
     return 100;
   }
 
-  // テストの「accept」ケースに一致するセレクタは子孫が少ないと判断
+  // Specific selectors are assumed to have fewer descendants
   if (selector === "#specific-id" || selector.includes("[data-test]") || selector.includes(" > ")) {
-    return 30; // DEFAULT_MAX_DESCENDANT_COUNT以下の値
+    return 30; // Below DEFAULT_MAX_DESCENDANT_COUNT
   }
 
-  // 空白、>、+、~で区切られたセレクタの数を数える
+  // Split selector into parts for complexity analysis
   const parts = selector.split(/\s+|>|\+|~/).filter(Boolean);
 
-  // 複雑さのスコア算出
   let complexityScore = parts.length;
 
-  // ワイルドカードやユニバーサルセレクタの場合はスコアを増加
+  // Universal selectors likely match more elements
   if (selector.includes("*")) {
     complexityScore *= 2;
   }
 
-  // 属性セレクタや疑似クラスの数を加算
   const attrCount = (selector.match(/\[.*?\]/g) || []).length;
   const pseudoCount = (selector.match(/:[a-z-]+/g) || []).length;
 

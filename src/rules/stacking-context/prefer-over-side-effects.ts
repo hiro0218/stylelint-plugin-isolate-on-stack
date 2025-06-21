@@ -1,10 +1,3 @@
-/**
- * 副作用を利用したスタッキングコンテキスト生成の代わりに
- * isolation: isolateの使用を推奨するルール
- *
- * opacity: 0.999やtransform: translateZ(0)などのハックを使ったスタッキングコンテキストの
- * 生成よりも、明示的なisolation: isolateを使用することを推奨
- */
 import { Rule } from "stylelint";
 import { Declaration, Rule as PostCSSRule } from "postcss";
 import { preferOverSideEffectsMessages } from "../../utils/message.js";
@@ -13,14 +6,11 @@ const ruleName = "stylelint-plugin-isolate-on-stack/prefer-over-side-effects";
 
 const rule: Rule = (primary, secondaryOptions) => {
   return (root, result) => {
-    // プライマリオプションがtrueでない場合はスキップ
     if (primary !== true) return;
 
-    // 副作用を利用したスタッキングコンテキスト生成パターンをチェック
     root.walkDecls((decl) => {
       const { prop, value } = decl;
 
-      // 不透明度が極めて1に近い値を使ったハック
       if (prop === "opacity" && parseFloat(value) >= 0.99 && parseFloat(value) < 1) {
         report({
           message: preferOverSideEffectsMessages.rejected,
@@ -30,7 +20,6 @@ const rule: Rule = (primary, secondaryOptions) => {
         });
       }
 
-      // 3D変換ハック（スタッキングコンテキスト生成目的）
       if (
         prop === "transform" &&
         (value === "translateZ(0)" ||
@@ -45,7 +34,6 @@ const rule: Rule = (primary, secondaryOptions) => {
         });
       }
 
-      // will-changeを使ったパフォーマンスヒント兼スタッキングコンテキスト生成
       if (
         prop === "will-change" &&
         (value.includes("opacity") || value.includes("transform") || value.includes("z-index"))

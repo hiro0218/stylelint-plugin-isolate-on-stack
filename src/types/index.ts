@@ -1,12 +1,9 @@
-/**
- * スタッキングコンテキスト関連の型定義
- */
-
 import type { Declaration, Rule as PostCSSRule } from "postcss";
 import type { Rule } from "stylelint";
 
 /**
- * スタッキングコンテキストを生成するCSSプロパティ一覧
+ * CSS properties that create stacking contexts
+ * These properties are used to determine if an element creates a stacking context
  */
 export const STACKING_CONTEXT_PROPERTIES = [
   "position",
@@ -25,13 +22,15 @@ export const STACKING_CONTEXT_PROPERTIES = [
   "z-index",
 ] as const;
 
-// プロパティの集合
+/**
+ * Set for O(1) lookups of stacking context properties
+ */
 export const STACKING_CONTEXT_PROPERTIES_SET = new Set<string>(STACKING_CONTEXT_PROPERTIES);
 
 export type StackingContextProperty = (typeof STACKING_CONTEXT_PROPERTIES)[number];
 
 /**
- * プラグインルールのオプション設定
+ * Configuration options for plugin rules
  */
 export interface RuleOptions {
   severity?: "error" | "warning";
@@ -42,7 +41,7 @@ export interface RuleOptions {
 }
 
 /**
- * Stylelintレポート関数の引数型
+ * Parameters for the report function used in Stylelint rules
  */
 export interface ReportFunctionParams {
   message: string;
@@ -54,7 +53,7 @@ export interface ReportFunctionParams {
 export type ReportFunction = (params: ReportFunctionParams) => void;
 
 /**
- * ルールのエラーメッセージ定義
+ * Error messages definition for Stylelint rules
  */
 export interface RuleMessages {
   [key: string]: string;
@@ -63,7 +62,7 @@ export interface RuleMessages {
 }
 
 /**
- * Stylelintプラグインルール型
+ * Extended Stylelint plugin rule type with added properties
  */
 export interface PluginRule extends Rule<boolean | [boolean, RuleOptions]> {
   ruleName: string;

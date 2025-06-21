@@ -1,7 +1,3 @@
-/**
- * スタッキングコンテキスト関連の問題を検出するStylelintプラグイン
- * isolation: isolateの冗長な使用や無効なケースを検出
- */
 import stylelint from "stylelint";
 import noRedundantDeclarationRule from "./rules/stacking-context/no-redundant-declaration.js";
 import ineffectiveOnBackgroundBlendRule from "./rules/stacking-context/ineffective-on-background-blend.js";
@@ -9,10 +5,7 @@ import preferOverSideEffectsRule from "./rules/stacking-context/prefer-over-side
 import zIndexRangeRule from "./rules/z-index-range/index.js";
 import performanceHighDescendantCountRule from "./rules/stacking-context/performance-high-descendant-count.js";
 
-// プラグインの名前空間
 const namespace = "stylelint-plugin-isolate-on-stack";
-
-// 各ルールをStylelintプラグインとして登録
 const noRedundantDeclaration = stylelint.createPlugin(
   `${namespace}/no-redundant-declaration`,
   noRedundantDeclarationRule,
@@ -35,7 +28,6 @@ const performanceHighDescendantCount = stylelint.createPlugin(
   performanceHighDescendantCountRule,
 );
 
-// Stylelint v16 ESM形式に対応したプラグイン配列
 const plugins = [
   noRedundantDeclaration,
   ineffectiveOnBackgroundBlend,
@@ -44,10 +36,8 @@ const plugins = [
   performanceHighDescendantCount,
 ];
 
-// ESM用のデフォルトエクスポート
 export default plugins;
 
-// 個別ルールのエクスポート - 名前付きインポートで利用可能
 export {
   noRedundantDeclarationRule as noRedundantDeclaration,
   ineffectiveOnBackgroundBlendRule as ineffectiveOnBackgroundBlend,

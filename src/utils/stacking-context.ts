@@ -1,52 +1,44 @@
-/**
- * スタッキングコンテキストの検出と分析のためのユーティリティ関数
- */
 import type { Declaration } from "postcss";
 import { STACKING_CONTEXT_PROPERTIES, STACKING_CONTEXT_PROPERTIES_SET } from "../types/index.js";
 
 /**
- * CSS宣言がスタッキングコンテキストを生成するか判定
+ * Determines if a CSS declaration creates a stacking context
  *
- * @param decl - 検査対象のCSS宣言
- * @returns スタッキングコンテキストを生成する場合はtrue
+ * @param decl - CSS declaration to check
+ * @returns true if the declaration creates a stacking context
  */
 export function createsStackingContext(decl: Declaration): boolean {
   const { prop, value } = decl;
 
-  // isolation: isolateは明示的なスタッキングコンテキスト生成
   if (prop === "isolation") {
     return value === "isolate";
   }
 
-  // transform
   if (prop === "transform") {
     return value !== "none";
   }
 
-  // opacity
   if (prop === "opacity") {
     return parseFloat(value) < 1;
   }
 
-  // これらのプロパティは共通の条件：none以外の値
   const noneCheckProps = ["filter", "backdrop-filter", "perspective", "clip-path", "mask", "mask-image", "mask-border"];
   if (noneCheckProps.includes(prop)) {
     return value !== "none";
   }
 
-  // mix-blend-modeはnormal以外の値でスタッキングコンテキスト生成
   if (prop === "mix-blend-mode") {
     return value !== "normal";
   }
 
-  // containは特定の値の場合
+  // Check for contain property values that create stacking contexts
   if (prop === "contain") {
     const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = value.split(" ").map((v) => v.trim());
     return containValues.some((v: string) => validContainValues.has(v));
   }
 
-  // will-change
+  // Check if will-change references properties that create stacking contexts
   if (prop === "will-change") {
     const stackingProps = new Set([...STACKING_CONTEXT_PROPERTIES, "opacity", "transform"]);
     const willChangeValues = value.split(",").map((v) => v.trim());
@@ -57,13 +49,13 @@ export function createsStackingContext(decl: Declaration): boolean {
 }
 
 /**
- * position と z-index の組み合わせによるスタッキングコンテキスト生成を検出
+ * Detects stacking context creation from position and z-index combination
  *
- * @param element - CSSプロパティを含むオブジェクト
- * @returns スタッキングコンテキストを生成する場合はtrue
+ * @param element - Object containing CSS properties
+ * @returns true if the element creates a stacking context via position and z-index
  */
 export function hasPositionAndZIndexStackingContext(element: Record<string, any>): boolean {
-  // static以外のposition値と、auto以外のz-indexの組み合わせでスタッキングコンテキスト生成
+  // Positioned elements (except static) with z-index other than auto create stacking contexts
   return (
     element.position &&
     ["relative", "absolute", "fixed", "sticky"].includes(element.position) &&
@@ -73,13 +65,13 @@ export function hasPositionAndZIndexStackingContext(element: Record<string, any>
 }
 
 /**
- * FlexアイテムまたはGridアイテムのz-indexによるスタッキングコンテキスト生成を検出
+ * Detects stacking context creation from z-index on flex or grid items
  *
- * @param element - CSSプロパティを含むオブジェクト
- * @returns スタッキングコンテキストを生成する場合はtrue
+ * @param element - Object containing CSS properties
+ * @returns true if the element creates a stacking context as a flex/grid item with z-index
  */
 export function hasFlexOrGridItemZIndexStackingContext(element: Record<string, any>): boolean {
-  // flexまたはgridコンテナ内の子要素でauto以外のz-indexを持つとスタッキングコンテキスト生成
+  // Child elements of flex/grid containers with z-index other than auto create stacking contexts
   const parentDisplay = element.parentDisplay || "";
   return (
     (parentDisplay === "flex" || parentDisplay === "grid") &&
@@ -89,10 +81,10 @@ export function hasFlexOrGridItemZIndexStackingContext(element: Record<string, a
 }
 
 /**
- * z-index値を数値として解析
+ * Parses z-index value to a number
  *
- * @param decl - z-index宣言
- * @returns 数値化したz-index値、autoまたは無効な値の場合はnull
+ * @param decl - z-index declaration
+ * @returns numeric z-index value, or null for 'auto' or invalid values
  */
 export function getZIndexValue(decl: Declaration): number | null {
   if (decl.prop !== "z-index") return null;
