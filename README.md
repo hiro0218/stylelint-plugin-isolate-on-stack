@@ -3,13 +3,39 @@
 [![NPM version](https://img.shields.io/npm/v/stylelint-plugin-isolate-on-stack.svg)](https://www.npmjs.org/package/stylelint-plugin-isolate-on-stack)
 [![Build Status](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/workflows/CI/badge.svg)](https://github.com/hiro0218/stylelint-plugin-isolate-on-stack/actions)
 
-A Stylelint plugin that enforces the use of `isolation: isolate` when using positioning properties (`position: absolute`, `position: relative`, `position: fixed`, `position: sticky`) with `z-index`. This plugin also supports autofix functionality.
+A Stylelint plugin that detects and prevents stacking context-related issues. This plugin enforces best practices for `z-index` usage and stacking context generation, aiming to improve CSS quality.
 
-## Background
+## Overview
 
-To prevent stacking context issues, it's recommended to specify `isolation: isolate` when using positioning properties and `z-index` together. This plugin detects missing settings and applies automatic fixes when needed.
+This plugin is designed for the following purposes:
+
+- Detect redundant or invalid uses of `isolation: isolate`
+- Warn against excessively high `z-index` values
+- Enforce best practices for stacking context generation
+- Help understand how CSS declarations affect stacking contexts
+
+## Stacking Context Detection
+
+This plugin automatically detects conditions where CSS properties generate stacking contexts:
+
+- `position: relative/absolute/fixed/sticky` + `z-index` other than `auto`
+- `opacity` less than 1
+- `transform` other than `none`
+- `filter` other than `none`
+- `backdrop-filter` other than `none`
+- `mix-blend-mode` other than `normal`
+- `isolation: isolate`
+- `contain: layout/paint/strict/content`
+- `perspective` other than `none`
+- `clip-path` other than `none`
+- `mask` / `mask-image` / `mask-border` other than `none`
+- `will-change` with properties that generate stacking contexts
+
+When these properties are detected, the plugin identifies redundant `isolation: isolate` declarations and encourages appropriate corrections.
 
 ## Installation
+
+Install with the following command:
 
 ```bash
 npm install --save-dev stylelint-plugin-isolate-on-stack
@@ -19,111 +45,135 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 
 ### Configuration
 
-Add the following to your `.stylelintrc.json` file (or other Stylelint configuration file):
+Add the following to your `.stylelintrc.json` file:
 
 ```json
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
-    "isolate-on-stack/isolation-for-position-zindex": true
+    // Enable stacking context related rules
+    "stylelint-plugin-isolate-on-stack/no-redundant-declaration": true,
+    // Detect invalid combinations with background blend modes
+    "stylelint-plugin-isolate-on-stack/ineffective-on-background-blend": true,
+    // Warn against excessively high z-index values
+    "stylelint-plugin-isolate-on-stack/z-index-range": [true, { "maxZIndex": 100 }],
+    // Encourage explicit isolation over properties with side effects
+    "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
+    // Warn about stacking contexts with high descendant counts
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }]
   }
 }
 ```
 
-### Rule Details
+## Rules
 
-This plugin reports an error when a positioning property and `z-index` (except `z-index: auto`) exist but `isolation: isolate` is not specified. The error will be attached directly to each `z-index` declaration node, making it clear which declarations need to be addressed.
+### no-redundant-declaration
 
-#### Autofix
+Detects redundant `isolation: isolate` declarations when stacking contexts are already created by other properties.
 
-This rule supports automatic fixing. When running the `stylelint --fix` command, it will automatically add `isolation: isolate` immediately after the last non-auto `z-index` declaration in the rule.
-
-#### ✅ Correct Example
+**Incorrect example:**
 
 ```css
-.element {
-  position: absolute;
-  z-index: 10;
-  isolation: isolate;
-}
-
-/* No warning, z-index: auto doesn't create a new stacking context */
-.element {
+.redundant {
   position: relative;
-  z-index: auto;
-}
-```
-
-#### ❌ Incorrect Example
-
-```css
-.element {
-  position: absolute;
-  z-index: 10;
-}
-```
-
-#### Pseudo-Elements
-
-This rule handles pseudo-elements specially:
-
-1. When a pseudo-element uses positioning properties with `z-index`, the rule will not report any errors, as `isolation: isolate` has no effect on pseudo-elements and would be redundant.
-
-2. When a pseudo-element already includes `isolation: isolate`, the rule will report a warning indicating that this property has no effect on pseudo-elements and should be removed.
-
-```css
-/* No error will be reported */
-.element::before {
-  position: absolute;
-  z-index: 10;
-}
-
-/* Will report a warning to remove the redundant property */
-.element::after {
-  position: fixed;
-  z-index: 5;
-  isolation: isolate;
-}
-```
-
-#### Mixed Selectors
-
-When a rule contains both normal selectors and pseudo-element selectors, the plugin will still report errors for the normal selectors:
-
-```css
-/* Will report an error for the normal selector */
-.element,
-.element::before {
-  position: absolute;
-  z-index: 10;
-}
-```
-
-The plugin distinguishes between rules containing:
-
-1. Only pseudo-elements - No warning about missing `isolation: isolate`, warns if it's present as redundant
-2. At least one normal element - Warning about missing `isolation: isolate` when position and z-index are present
-
-#### Multiple z-index Declarations
-
-When a rule contains multiple `z-index` declarations (except `z-index: auto`), the plugin will report errors for each non-auto declaration:
-
-```css
-/* Will report errors for both z-index declarations */
-.element {
-  position: absolute;
   z-index: 1;
-  color: red;
-  z-index: 2;
-}
-
-/* Will report an error only for z-index: 5, but not for z-index: auto */
-.element {
-  position: relative;
-  z-index: auto;
-  margin: 10px;
-  z-index: 5;
+  isolation: isolate; /* Redundant: position + z-index already creates a stacking context */
 }
 ```
 
-When using the autofix feature, the plugin will add `isolation: isolate` after the last `z-index` declaration in the rule.
+**Correct example:**
+
+```css
+.not-redundant {
+  isolation: isolate; /* OK: No other properties are creating a stacking context */
+}
+```
+
+### ineffective-on-background-blend
+
+Detects invalid combinations of `background-blend-mode` and `isolation: isolate`. `isolation: isolate` does not affect the behavior of `background-blend-mode`.
+
+**Incorrect example:**
+
+```css
+.invalid {
+  background-blend-mode: multiply;
+  isolation: isolate; /* Invalid: does not affect background-blend-mode */
+}
+```
+
+**Correct example:**
+
+```css
+.valid {
+  isolation: isolate;
+  mix-blend-mode: multiply; /* OK: mix-blend-mode is affected by isolation */
+}
+```
+
+### z-index-range
+
+Detects excessively high `z-index` values. By default, values exceeding 100 will trigger a warning.
+
+**Incorrect example:**
+
+```css
+.too-high {
+  z-index: 9999; /* Excessively high value */
+}
+```
+
+**Correct example:**
+
+```css
+.reasonable {
+  z-index: 10; /* Within reasonable range */
+}
+```
+
+### prefer-over-side-effects
+
+Encourages the use of explicit `isolation: isolate` over properties with side effects when the sole purpose is to create a stacking context.
+
+**Incorrect example:**
+
+```css
+.hacky {
+  opacity: 0.999; /* Almost not transparent but used to create a stacking context */
+}
+
+.hacky-transform {
+  transform: translateZ(0); /* Hack to create a stacking context */
+}
+```
+
+**Correct example:**
+
+```css
+.explicit {
+  isolation: isolate; /* Explicitly creates a stacking context */
+}
+```
+
+### performance-high-descendant-count
+
+Warns when elements creating stacking contexts contain a high number of descendant elements. Stacking contexts with many descendants can impact browser rendering performance.
+
+**Incorrect example:**
+
+```css
+.complex-stacking-context {
+  position: relative;
+  z-index: 1;
+  /* This will trigger a warning if the element has more than 100 descendants */
+}
+```
+
+**Correct example:**
+
+```css
+.optimized-structure {
+  /* Optimize DOM structure to keep descendant count within limits */
+  isolation: isolate;
+}
+```

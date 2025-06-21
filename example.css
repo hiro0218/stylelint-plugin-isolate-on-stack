@@ -153,3 +153,88 @@
   background-color: green;
   z-index: 999; /* Very high value */
 }
+
+/* -----------------------------
+ * Advanced Stacking Context Examples
+ * ----------------------------- */
+
+/* No error when opacity creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-opacity {
+  position: absolute;
+  z-index: 10;
+  opacity: 0.9; /* Creates a stacking context */
+}
+
+/* No error when transform creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-transform {
+  position: relative;
+  z-index: 5;
+  transform: translateZ(0); /* Creates a stacking context */
+}
+
+/* No error when filter creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-filter {
+  position: fixed;
+  z-index: 100;
+  filter: blur(5px); /* Creates a stacking context */
+}
+
+/* No error when will-change creates a stacking context (with ignoreWhenStackingContextExists option) */
+.stacking-will-change {
+  position: sticky;
+  z-index: 50;
+  will-change: transform; /* Creates a stacking context */
+}
+
+/* Class-based ignoring (with ignoreClasses option) */
+.layout-component.no-isolation {
+  position: absolute;
+  z-index: 200;
+  /* No error with proper configuration */
+}
+
+/* Stylelint disable comment example */
+/* stylelint-disable-next-line isolate-on-stack/isolation-for-position-zindex */
+.disabled-by-comment {
+  position: relative;
+  z-index: 300;
+}
+
+/* Redundant isolation with existing stacking context */
+.redundant-isolation {
+  position: absolute;
+  z-index: 400;
+  isolation: isolate; /* Redundant with ignoreWhenStackingContextExists option */
+  opacity: 0.8; /* Already creates a stacking context */
+}
+
+/* -----------------------------
+ * Lint Rule Definitions
+ * ----------------------------- */
+
+/* Example of redundant stacking context creation */
+.redundant-stacking-context {
+  position: absolute;
+  z-index: 10;
+  isolation: isolate; /* Redundant as z-index already creates stacking context */
+}
+
+/* Example of high z-index value */
+.high-z-index {
+  position: relative;
+  z-index: 999999; /* Excessively high value */
+}
+
+/* Example of stacking context creation with opacity */
+.opacity-stacking-context {
+  position: absolute;
+  z-index: 5;
+  opacity: 0.5; /* Creates stacking context */
+}
+
+/* Example of stacking context creation with transform */
+.transform-stacking-context {
+  position: fixed;
+  z-index: 100;
+  transform: scale(1); /* Creates stacking context */
+}
