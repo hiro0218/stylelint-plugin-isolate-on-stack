@@ -97,11 +97,11 @@ export function getZIndexValue(decl: Declaration): number | null {
 }
 
 /**
- * background-blend-modeとisolation: isolateの組み合わせが問題になるかを検出
- * isolation: isolateはbackground-blend-modeに影響しないため、無効な組み合わせとなる
+ * Detects invalid combinations of background-blend-mode and isolation: isolate
+ * isolation: isolate has no effect on background-blend-mode, making this an ineffective combination
  *
- * @param element - CSSプロパティを含むオブジェクト
- * @returns 無効な組み合わせの場合はtrue
+ * @param element - Object containing CSS properties
+ * @returns true if there's an ineffective combination
  */
 export function hasInvalidBackgroundBlendWithIsolation(element: Record<string, any>): boolean {
   return (
@@ -112,13 +112,13 @@ export function hasInvalidBackgroundBlendWithIsolation(element: Record<string, a
 }
 
 /**
- * 要素が既にスタッキングコンテキストを生成する条件を満たしているか検出
+ * Detects if an element already meets conditions to generate a stacking context
  *
- * @param element - CSSプロパティを含むオブジェクト
- * @returns 既にスタッキングコンテキストを生成する場合はtrue
+ * @param element - Object containing CSS properties
+ * @returns true if the element already creates a stacking context
  */
 export function alreadyCreatesStackingContext(element: Record<string, any>): boolean {
-  // 1. position + z-index の組み合わせ
+  // 1. position + z-index combination
   if (
     element.position &&
     ["relative", "absolute", "fixed", "sticky"].includes(element.position) &&
@@ -134,25 +134,25 @@ export function alreadyCreatesStackingContext(element: Record<string, any>): boo
   // 3. opacity < 1
   if (element.opacity !== undefined && parseFloat(element.opacity) < 1) return true;
 
-  // 4. filter系
+  // 4. filter properties
   if (element.filter !== undefined && element.filter !== "none") return true;
   if (element["backdrop-filter"] !== undefined && element["backdrop-filter"] !== "none") return true;
 
   // 5. mix-blend-mode
   if (element["mix-blend-mode"] !== undefined && element["mix-blend-mode"] !== "normal") return true;
 
-  // 6. flex/gridアイテムのz-index
+  // 6. flex/grid item with z-index
   if (hasFlexOrGridItemZIndexStackingContext(element)) return true;
 
-  // 7. その他のプロパティ
+  // 7. Other properties
   if (element.perspective !== undefined && element.perspective !== "none") return true;
   if (element["clip-path"] !== undefined && element["clip-path"] !== "none") return true;
 
-  // マスク関連のプロパティをまとめて処理
+  // Process mask-related properties together
   const maskProps = ["mask", "mask-image", "mask-border"];
   for (const prop of maskProps) {
     if (element[prop] !== undefined && element[prop] !== "none") return true;
-  } // containプロパティによるスタッキングコンテキスト
+  } // Stacking context from contain property
   if (element.contain !== undefined) {
     const validContainValues = new Set(["layout", "paint", "strict", "content"]);
     const containValues = element.contain.split(" ").map((v: string) => v.trim());
@@ -161,7 +161,7 @@ export function alreadyCreatesStackingContext(element: Record<string, any>): boo
     }
   }
 
-  // will-changeプロパティによるスタッキングコンテキスト
+  // Stacking context from will-change property
   if (element["will-change"] !== undefined) {
     const stackingProps = new Set(["opacity", "transform"]);
     const willChangeValues = element["will-change"].split(",").map((v: string) => v.trim());
@@ -174,15 +174,15 @@ export function alreadyCreatesStackingContext(element: Record<string, any>): boo
 }
 
 /**
- * ルール内のすべての宣言を収集する
+ * Collects all declarations within rules
  *
- * @param root - CSSルートノード
- * @returns セレクタごとのプロパティマップ
+ * @param root - CSS root node
+ * @returns Map of properties for each selector
  */
 export function collectElementProperties(root: any): Map<string, Map<string, string>> {
   const elementProperties = new Map<string, Map<string, string>>();
 
-  // すべての宣言を収集して各要素のプロパティマップを構築
+  // Collect all declarations and build property maps for each element
   root.walkRules((rule: any) => {
     const selector = rule.selector;
 

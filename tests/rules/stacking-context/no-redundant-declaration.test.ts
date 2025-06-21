@@ -1,6 +1,15 @@
 import { testRule } from "../../utils/custom-test-rule";
-import rule from "../../../src/rules/stacking-context/no-redundant-declaration";
+import rule, {
+  ruleName as importedRuleName,
+  report,
+  checkRedundantIsolation,
+} from "../../../src/rules/stacking-context/no-redundant-declaration";
 import { noRedundantDeclarationMessages } from "../../../src/utils/message";
+import { describe, it, expect, vi } from "vitest";
+import postcss from "postcss";
+import Root from "postcss/lib/root";
+import Declaration from "postcss/lib/declaration";
+import Rule from "postcss/lib/rule";
 
 const { ruleName } = rule;
 
@@ -178,4 +187,177 @@ testRule({
       column: 54,
     },
   ],
+});
+
+describe("no-redundant-declaration unit tests", () => {
+  describe("report function", () => {
+    it("should call result.warn with correct parameters", () => {
+      const result = {
+        warn: vi.fn(),
+      };
+
+      const node = new Declaration({ prop: "isolation", value: "isolate" });
+      const message = "Test message";
+
+      report({
+        message,
+        node,
+        result,
+        ruleName: importedRuleName,
+      });
+
+      expect(result.warn).toHaveBeenCalledWith(message, {
+        node,
+        ruleName: importedRuleName,
+      });
+    });
+  });
+
+  describe("checkRedundantIsolation function", () => {
+    it("should not report when no rules exist", () => {
+      const root = new Root();
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when isolation property is not present", () => {
+      const css = `.selector { color: red; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when isolation is not set to isolate", () => {
+      const css = `.selector { isolation: auto; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when isolation: isolate is used alone", () => {
+      const css = `.selector { isolation: isolate; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when other properties don't create a stacking context", () => {
+      const css = `.selector {
+        isolation: isolate;
+        position: relative;
+        z-index: auto;
+        opacity: 1;
+        transform: none;
+      }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should report when other properties already create a stacking context", () => {
+      const css = `.selector {
+        isolation: isolate;
+        position: relative;
+        z-index: 1;
+      }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).toHaveBeenCalledWith(
+        noRedundantDeclarationMessages.rejected,
+        expect.objectContaining({
+          ruleName: importedRuleName,
+        })
+      );
+    });
+
+    it("should handle multiple rules correctly", () => {
+      const css = `
+        .selector1 { isolation: isolate; opacity: 0.5; }
+        .selector2 { isolation: isolate; }
+      `;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle properties declared in different orders", () => {
+      const css = `
+        .selector1 { opacity: 0.5; isolation: isolate; }
+        .selector2 { isolation: isolate; opacity: 0.5; }
+      `;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it("should not report when isolation value is not 'isolate'", () => {
+      const css = `.selector { isolation: auto; position: relative; z-index: 1; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkRedundantIsolation(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // 別のテストグループとしてruleをテスト
+  testRule({
+    plugins: [process.cwd()],
+    ruleName,
+    config: false,
+
+    accept: [
+      {
+        code: ".invalid { position: relative; z-index: 1; isolation: isolate; }",
+        description: "When config is false, even redundant isolation should be accepted",
+      },
+    ],
+  });
+
+  testRule({
+    plugins: [process.cwd()],
+    ruleName,
+    config: null,
+
+    accept: [
+      {
+        code: ".invalid { position: relative; z-index: 1; isolation: isolate; }",
+        description: "When config is null, even redundant isolation should be accepted",
+      },
+    ],
+  });
 });

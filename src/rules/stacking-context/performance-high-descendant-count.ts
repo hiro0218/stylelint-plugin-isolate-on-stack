@@ -4,7 +4,7 @@ import { performanceHighDescendantCountMessages } from "../../utils/message.js";
 
 export const ruleName = "stylelint-plugin-isolate-on-stack/performance-high-descendant-count";
 
-const DEFAULT_MAX_DESCENDANT_COUNT = 50;
+export const DEFAULT_MAX_DESCENDANT_COUNT = 50;
 
 /**
  * Estimates the number of descendant elements based on selector complexity
@@ -13,7 +13,7 @@ const DEFAULT_MAX_DESCENDANT_COUNT = 50;
  * @param selector - CSS selector to analyze
  * @returns Estimated number of descendants
  */
-function estimateDescendantCount(selector: string): number {
+export function estimateDescendantCount(selector: string): number {
   // Known test cases with fixed values for predictable testing
   if (selector === "div") {
     return 60;
@@ -45,51 +45,67 @@ function estimateDescendantCount(selector: string): number {
 
   complexityScore += attrCount * 2 + pseudoCount;
 
-  // IDセレクタが少ない場合は潜在的に多くの要素に影響する可能性が高い
+  // If there are few ID selectors, the selector potentially affects many elements
   const idCount = (selector.match(/#[a-z0-9_-]+/gi) || []).length;
   if (idCount === 0) {
     complexityScore *= 3;
   } else {
-    // IDセレクタがある場合は具体的な要素を指すため、スコアを大幅に下げる
+    // If ID selectors are present, they target specific elements, so significantly reduce the score
     complexityScore = Math.max(1, Math.floor(complexityScore / 3));
   }
 
-  return complexityScore * 15; // 経験的な係数
+  return complexityScore * 15; // Empirical coefficient
 }
 
-// ルール定義
-const performanceHighDescendantCountRule = (primary: boolean): ((root: Root, result: any) => void) => {
+/**
+ * Checks if a selector generates a stacking context and
+ * generates warnings if the estimated number of descendants exceeds the threshold
+ *
+ * @param root - CSS root node
+ * @param result - Stylelint result object
+ * @param maxDescendantCount - Maximum acceptable number of descendants
+ */
+export function checkSelectorDescendantCount(root: Root, result: any, maxDescendantCount: number): void {
+  // Check elements that generate stacking contexts
+  root.walkRules((rule: PostCSSRule): void => {
+    // Get selector
+    const selector = rule.selector;
+
+    // Check if it creates a stacking context
+    const propsRecord: Record<string, string> = {};
+    rule.walkDecls((decl: Declaration): void => {
+      propsRecord[decl.prop] = decl.value;
+    });
+
+    if (alreadyCreatesStackingContext(propsRecord)) {
+      // Heuristically evaluate CSS selector complexity and number of descendant selectors
+      const descendantEstimate = estimateDescendantCount(selector);
+
+      if (descendantEstimate > maxDescendantCount) {
+        result.warn(performanceHighDescendantCountMessages.rejected(selector, descendantEstimate), {
+          node: rule,
+          ruleName,
+        });
+      }
+    }
+  });
+}
+
+// Rule definition
+const performanceHighDescendantCountRule = (primary: boolean, secondaryOptions?: { maxDescendantCount?: number }): ((root: Root, result: any) => void) => {
   return (root: Root, result: any): void => {
-    // プライマリオプションがtrueでない場合はスキップ
+    // Skip if primary option is not true
     if (primary !== true) return;
 
-    // スタッキングコンテキストを生成する要素をチェック
-    root.walkRules((rule: PostCSSRule): void => {
-      // セレクタを取得
-      const selector = rule.selector;
+    // Get maxDescendantCount from secondary options or use default value
+    const maxDescendantCount = secondaryOptions?.maxDescendantCount || DEFAULT_MAX_DESCENDANT_COUNT;
 
-      // スタッキングコンテキストを生成するかをチェック
-      const propsRecord: Record<string, string> = {};
-      rule.walkDecls((decl: Declaration): void => {
-        propsRecord[decl.prop] = decl.value;
-      });
-
-      if (alreadyCreatesStackingContext(propsRecord)) {
-        // CSSセレクタの複雑さや子孫セレクタの数をヒューリスティックに評価
-        const descendantEstimate = estimateDescendantCount(selector);
-
-        if (descendantEstimate > DEFAULT_MAX_DESCENDANT_COUNT) {
-          result.warn(performanceHighDescendantCountMessages.rejected(selector, descendantEstimate), {
-            node: rule,
-            ruleName,
-          });
-        }
-      }
-    });
+    // Run descendant count check
+    checkSelectorDescendantCount(root, result, maxDescendantCount);
   };
 };
 
-// Stylelintルールとしての追加属性を設定
+// Set additional attributes as Stylelint rule
 performanceHighDescendantCountRule.ruleName = ruleName;
 performanceHighDescendantCountRule.messages = performanceHighDescendantCountMessages;
 

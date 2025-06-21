@@ -1,9 +1,19 @@
 import { testRule } from "../../utils/custom-test-rule";
-import rule from "../../../src/rules/z-index-range/index";
+import rule, {
+  ruleName as importedRuleName,
+  report,
+  checkZIndexRange,
+  DEFAULT_MAX_Z_INDEX,
+} from "../../../src/rules/z-index-range/index";
 import { zIndexRangeMessages } from "../../../src/utils/message";
+import { describe, it, expect, vi } from "vitest";
+import postcss from "postcss";
+import Root from "postcss/lib/root";
+import Declaration from "postcss/lib/declaration";
 
 const { ruleName } = rule;
 
+// 既存のtestRuleコードはそのまま
 testRule({
   plugins: [process.cwd()],
   ruleName,
@@ -90,4 +100,142 @@ testRule({
       column: 11,
     },
   ],
+});
+
+// falsyな設定値でのルールテストケース
+testRule({
+  plugins: [process.cwd()],
+  ruleName,
+  config: false,
+
+  accept: [
+    {
+      code: ".invalid { z-index: 999; }",
+      description: "When config is false, even high z-index values should be accepted",
+    },
+  ],
+});
+
+testRule({
+  plugins: [process.cwd()],
+  ruleName,
+  config: null,
+
+  accept: [
+    {
+      code: ".invalid { z-index: 9999; }",
+      description: "When config is null, even high z-index values should be accepted",
+    },
+  ],
+});
+
+// 新しいユニットテスト
+describe("z-index-range unit tests", () => {
+  describe("report function", () => {
+    it("should call result.warn with correct parameters", () => {
+      // モックを作成
+      const result = {
+        warn: vi.fn(),
+      };
+
+      const node = new Declaration({ prop: "z-index", value: "999" });
+      const message = "Test message";
+
+      // 関数を実行
+      report({
+        message,
+        node,
+        result,
+        ruleName: importedRuleName,
+      });
+
+      // 期待される結果
+      expect(result.warn).toHaveBeenCalledWith(message, {
+        node,
+        ruleName: importedRuleName,
+      });
+    });
+  });
+
+  describe("checkZIndexRange function", () => {
+    it("should not report when no declarations exist", () => {
+      const root = new Root();
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkZIndexRange(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when z-index is within range", () => {
+      const css = `.selector { z-index: 50; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkZIndexRange(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should not report when z-index is auto", () => {
+      const css = `.selector { z-index: auto; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkZIndexRange(root, result);
+      expect(result.warn).not.toHaveBeenCalled();
+    });
+
+    it("should report when z-index exceeds default maximum", () => {
+      const css = `.selector { z-index: 101; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkZIndexRange(root, result);
+      expect(result.warn).toHaveBeenCalledWith(
+        zIndexRangeMessages.rejected(101, DEFAULT_MAX_Z_INDEX),
+        expect.objectContaining({
+          ruleName: importedRuleName,
+        })
+      );
+    });
+
+    it("should respect custom maximum z-index", () => {
+      const css = `.selector { z-index: 20; }`;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+      const customMax = 10;
+
+      checkZIndexRange(root, result, customMax);
+      expect(result.warn).toHaveBeenCalledWith(
+        zIndexRangeMessages.rejected(20, customMax),
+        expect.objectContaining({
+          ruleName: importedRuleName,
+        })
+      );
+    });
+
+    it("should handle multiple declarations", () => {
+      const css = `
+        .selector1 { z-index: 50; }
+        .selector2 { z-index: 200; }
+        .selector3 { z-index: 999; }
+      `;
+      const root = postcss.parse(css);
+      const result = {
+        warn: vi.fn(),
+      };
+
+      checkZIndexRange(root, result);
+      expect(result.warn).toHaveBeenCalledTimes(2); // 2つのz-indexが範囲外
+    });
+  });
 });
