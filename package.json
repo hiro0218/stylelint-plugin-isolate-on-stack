@@ -1,6 +1,6 @@
 {
   "name": "stylelint-plugin-isolate-on-stack",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A Stylelint plugin to detect redundant or invalid uses of 'isolation: isolate' in CSS.",
   "keywords": [
     "stylelint-plugin",
