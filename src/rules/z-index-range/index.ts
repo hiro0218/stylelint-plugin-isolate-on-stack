@@ -57,6 +57,10 @@ const rule: Rule<boolean | [boolean, RuleOptions]> = (primary, secondaryOptions)
   return (root, result) => {
     if (primary !== true) return;
 
+    // Option extraction logic:
+    // If primary is an array, it may be in the form [true, options].
+    // In that case, use options if present, otherwise use secondaryOptions.
+    // If primary is just a boolean, use secondaryOptions.
     const options = Array.isArray(primary) && primary.length > 1 && primary[1] ? primary[1] : secondaryOptions || {};
     const maxZIndex = options.maxZIndex !== undefined ? options.maxZIndex : DEFAULT_MAX_Z_INDEX;
 
