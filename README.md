@@ -47,7 +47,7 @@ npm install --save-dev stylelint-plugin-isolate-on-stack
 
 Add the following to your `.stylelintrc.json` file:
 
-```json
+```jsonc
 {
   "plugins": ["stylelint-plugin-isolate-on-stack"],
   "rules": {
@@ -60,8 +60,8 @@ Add the following to your `.stylelintrc.json` file:
     // Encourage explicit isolation over properties with side effects
     "stylelint-plugin-isolate-on-stack/prefer-over-side-effects": true,
     // Warn about stacking contexts with high descendant counts
-    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }]
-  }
+    "stylelint-plugin-isolate-on-stack/performance-high-descendant-count": [true, { "maxDescendantCount": 50 }],
+  },
 }
 ```
 
